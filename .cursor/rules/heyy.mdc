@@ -1,0 +1,64 @@
+# AI Bot Detection Browser Extension - Project Rules
+
+## Project Overview
+
+Our browser extension detects AI bots on websites and monitors user interactions to identify potential privacy risks.
+
+## Core Functionality
+
+- **Bot Detection**: Automatically identifies AI chatbots and bots on websites
+- **Conversation Monitoring**: Reads and analyzes bot-user conversations in real-time
+- **Privacy Risk Assessment**: Detects when bots request personal/sensitive information
+- **User Warning System**: Alerts users via popup when privacy risks are detected
+
+## Conversation Pattern Recognition
+
+The extension monitors conversation flows like:
+
+```
+Bot: [AI bot response]
+User: [User input]
+Bot: [AI bot response]
+```
+
+## Privacy Risk Detection
+
+The extension warns users when bots request:
+
+- Phone numbers
+- Personal information
+- Addresses
+- Financial details
+- Social security numbers
+- Other sensitive data
+
+## Technical Implementation
+
+- **Browser Extension**: Chrome/Firefox compatible
+- **Content Scripts**: Monitor webpage content and bot interactions
+- **Background Scripts**: Process data and manage extension state
+- **Popup Interface**: User warnings and settings
+- **API Integration**: Gemini AI for enhanced bot detection
+
+## Gemini AI Integration
+
+Use the provided free Gemini API key for enhanced bot detection capabilities:
+
+```
+AIzaSyC0P9KY3lAjFTy73kHTFJ34VC8HoSJgy-Y
+```
+
+## User Experience
+
+- Non-intrusive monitoring
+- Clear, actionable warnings
+- Educational content about bot privacy risks
+- Easy-to-understand risk assessments
+
+## Development Guidelines
+
+- Focus on user privacy and security
+- Ensure accurate bot detection
+- Minimize false positives
+- Provide clear, helpful warnings
+- Maintain extension performance

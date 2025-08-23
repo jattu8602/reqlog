@@ -1,197 +1,267 @@
-# Request Logger Chrome Extension
+# 🤖 AI Bot Privacy Guard
 
-A Chrome extension that captures network requests from websites and logs them to MongoDB via an API endpoint.
+A browser extension that detects AI bots on websites and warns users about potential privacy risks. Built with modern web technologies and powered by Google's Gemini AI for enhanced detection capabilities.
 
-## Features
+## 🚀 Features
 
-- 🔍 **Network Request Capture**: Captures all HTTP/HTTPS requests using `chrome.webRequest`
-- 📊 **Comprehensive Logging**: Logs URL, method, status, headers, response size/time, and more
-- 🎯 **Real-time Monitoring**: Live streaming of request logs to your API
-- 💾 **MongoDB Integration**: Stores logs in MongoDB for further analysis
-- 🎨 **Beautiful UI**: Modern, responsive popup interface with toggle controls
-- 📱 **Content Script Integration**: Captures page-level information and form submissions
+### Core Functionality
 
-## What We Can Do ✅
+- **AI Bot Detection**: Automatically identifies AI chatbots and bots on websites
+- **Real-time Monitoring**: Continuously monitors bot-user conversations
+- **Privacy Risk Assessment**: Detects when bots request sensitive information
+- **Smart Warnings**: Immediate alerts for potential privacy violations
+- **AI-Enhanced Analysis**: Uses Gemini AI for sophisticated risk detection
 
-1. **Capture Network Requests**: All HTTP/HTTPS requests made by the browser
-2. **Request Details**: Method, URL, headers, request body, timestamp
-3. **Response Details**: Status code, response headers, response size, latency
-4. **Error Handling**: Capture failed requests and network errors
-5. **Form Submissions**: Monitor form submissions and AJAX requests
-6. **Page Information**: Document title, URL, referrer, viewport dimensions
-7. **Real-time Logging**: Stream logs to your API endpoint
-8. **Toggle Controls**: Enable/disable logging on demand
-9. **Statistics**: Track total requests captured
+### Privacy Risk Detection
 
-## What We Cannot Do ❌
+The extension monitors for requests of:
 
-1. **HTTPS Content**: Cannot read encrypted request/response bodies due to security restrictions
-2. **Private Browsing**: Limited functionality in incognito mode
-3. **Extension Pages**: Cannot capture requests from chrome://, chrome-extension://, or other extension pages
-4. **WebSocket Data**: Limited WebSocket monitoring capabilities
-5. **File Downloads**: Cannot capture file download content, only metadata
-6. **Cross-Origin Restrictions**: Some limitations on cross-origin request details
-7. **Browser Extensions**: Cannot monitor other browser extensions' requests
+- Phone numbers and contact information
+- Email addresses
+- Home/billing addresses
+- Credit card and financial details
+- Social Security Numbers (SSN)
+- Date of birth and personal details
+- Identity documents
+- Bank account information
+- Security questions
+- Income and financial data
 
-## Installation
+### User Experience
 
-### 1. Download the Extension
+- **Non-intrusive Monitoring**: Works silently in the background
+- **Real-time Notifications**: Immediate warnings for privacy risks
+- **Detailed Analytics**: View bot detection history and warnings
+- **Easy Management**: Simple toggle to enable/disable monitoring
+- **Data Privacy**: All data stored locally, no external tracking
 
-1. Clone or download this repository
-2. Ensure all files are in the same directory:
-   - `manifest.json`
-   - `background.js`
-   - `popup.html`
-   - `popup.js`
-   - `content.js`
+## 🛠️ Technical Architecture
 
-### 2. Load in Chrome
+### Browser Extension Components
 
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top right)
-3. Click "Load unpacked"
-4. Select the directory containing your extension files
-5. The extension should now appear in your extensions list
+- **Content Scripts**: Monitor webpage content and bot interactions
+- **Background Service Worker**: Processes data and manages extension state
+- **Popup Interface**: User controls and statistics display
+- **Notification System**: Browser notifications for important alerts
 
-### 3. Configure API Endpoint
+### AI Integration
 
-1. Open `background.js`
-2. Replace `https://your-api-endpoint.com/api/logs` with your actual API endpoint
-3. The MongoDB connection string is already configured
+- **Gemini AI API**: Enhanced bot message analysis
+- **Pattern Recognition**: Advanced privacy risk detection
+- **Contextual Analysis**: Understanding conversation context
+- **Risk Scoring**: Intelligent severity assessment
 
-### 4. Grant Permissions
+### Data Management
 
-1. Click on the extension icon in your toolbar
-2. Chrome will prompt for necessary permissions
-3. Accept all permissions for full functionality
+- **Local Storage**: All data stored locally for privacy
+- **Real-time Updates**: Live statistics and monitoring
+- **Data Export**: View detailed bot detection reports
+- **Cleanup System**: Automatic data management
 
-## Testing Process
+## 📦 Installation
 
-### 1. Basic Functionality Test
+### For Users
 
-1. **Install Extension**: Follow installation steps above
-2. **Check Popup**: Click extension icon to verify popup loads
-3. **Toggle Logging**: Test the on/off switch
-4. **Visit Websites**: Navigate to different websites to trigger requests
+1. Download the extension files
+2. Open Chrome/Edge and go to `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select the extension folder
+5. The extension will appear in your browser toolbar
 
-### 2. Network Capture Test
+### For Developers
 
-1. **Open Developer Tools**: Press F12 and go to Network tab
-2. **Enable Extension**: Ensure logging is enabled in popup
-3. **Browse Website**: Navigate to a website with forms/API calls
-4. **Check Console**: Look for extension messages in console
-5. **Verify API Calls**: Check your API endpoint for incoming logs
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Make changes to the code
+4. Load the extension in developer mode
+5. Test your changes
 
-### 3. Content Script Test
+## 🔧 Development
 
-1. **Form Submission**: Fill out and submit a form on any website
-2. **AJAX Requests**: Visit sites with dynamic content loading
-3. **Page Navigation**: Navigate between different pages
-4. **Check Background**: Verify data is being sent to background script
+### Prerequisites
 
-### 4. Database Integration Test
+- Node.js (v14 or higher)
+- Modern browser (Chrome, Edge, Firefox)
+- Gemini AI API key (for enhanced detection)
 
-1. **Check API Logs**: Verify logs are reaching your API endpoint
-2. **MongoDB Storage**: Confirm logs are being stored in MongoDB
-3. **Data Format**: Verify log structure matches expected schema
+### Project Structure
 
-## API Endpoint Requirements
-
-Your API endpoint should:
-
-1. **Accept POST requests** to `/api/logs`
-2. **Handle JSON payloads** with the log entry structure
-3. **Connect to MongoDB** using the provided connection string
-4. **Return appropriate HTTP status codes**
-
-## Log Entry Schema
-
-```json
-{
-  "timestamp": "2025-01-23T12:34:56Z",
-  "url": "https://example.com/api/v1/user",
-  "method": "POST",
-  "status_code": 200,
-  "request_headers": {},
-  "request_body": {},
-  "response_headers": {},
-  "response_body": {},
-  "latency_ms": 312,
-  "request_size_bytes": 420,
-  "response_size_bytes": 245,
-  "ip_address": "192.168.1.15",
-  "protocol": "https",
-  "error": null,
-  "mongodb_url": "mongodb+srv://..."
-}
+```
+ai-bot-privacy-guard/
+├── manifest.json          # Extension configuration
+├── content.js            # Content script for bot detection
+├── background.js         # Background service worker
+├── popup.html           # Extension popup interface
+├── popup.js             # Popup functionality
+├── icons/               # Extension icons
+├── package.json         # Dependencies and scripts
+└── README.md            # Project documentation
 ```
 
-## Troubleshooting
+### Key Components
 
-### Extension Not Loading
+#### Content Script (`content.js`)
 
-- Check `manifest.json` syntax
-- Verify all files are in the same directory
-- Check Chrome console for errors
+- Detects AI bots on webpages
+- Monitors bot-user conversations
+- Identifies privacy risks in real-time
+- Sends warnings to background script
 
-### No Network Requests Captured
+#### Background Script (`background.js`)
 
-- Ensure extension has necessary permissions
-- Check if logging is enabled in popup
-- Verify `host_permissions` includes `<all_urls>`
+- Manages extension state
+- Processes bot detection data
+- Integrates with Gemini AI API
+- Handles notifications and storage
 
-### API Calls Failing
+#### Popup Interface (`popup.html/popup.js`)
 
-- Check your API endpoint URL in `background.js`
-- Verify API endpoint is accessible
-- Check network tab for failed requests
+- User controls and settings
+- Real-time statistics display
+- Bot detection details
+- Data management options
 
-### Content Script Issues
+## 🎯 How It Works
 
-- Ensure `content.js` is properly referenced in manifest
-- Check for JavaScript errors in page console
-- Verify content script matches are correct
+### 1. Bot Detection
 
-## Security Considerations
+The extension scans webpages for common AI bot indicators:
 
-1. **Permissions**: Extension requests broad permissions - use responsibly
-2. **Data Privacy**: Be aware of what data is being captured
-3. **API Security**: Secure your API endpoint appropriately
-4. **MongoDB Access**: Restrict database access to necessary users only
+- Text content mentioning "chatbot", "AI assistant", etc.
+- UI elements with bot-related classes
+- Data attributes indicating bot functionality
 
-## Performance Impact
+### 2. Conversation Monitoring
 
-- **Memory**: Minimal memory usage for request tracking
-- **CPU**: Low CPU impact for request monitoring
-- **Network**: Additional API calls to your endpoint
-- **Storage**: Local storage for extension settings only
+Once a bot is detected, the extension:
 
-## Browser Compatibility
+- Monitors chat containers and input fields
+- Tracks bot and user messages
+- Analyzes conversation content for privacy risks
 
-- **Chrome**: Full support (tested)
-- **Edge**: Should work (Chromium-based)
-- **Firefox**: Requires manifest v2 conversion
-- **Safari**: Not supported (different extension system)
+### 3. Risk Assessment
 
-## Development
+Messages are analyzed using:
 
-To modify the extension:
+- Pattern matching for common privacy risks
+- Gemini AI for sophisticated analysis
+- Context-aware risk scoring
 
-1. **Edit Files**: Modify JavaScript, HTML, or CSS files
-2. **Reload Extension**: Click reload button in `chrome://extensions/`
-3. **Test Changes**: Visit websites to test modifications
-4. **Debug**: Use Chrome DevTools for background script debugging
+### 4. User Protection
 
-## Support
+When risks are detected:
 
-For issues or questions:
+- Immediate visual warnings appear
+- Browser notifications are sent
+- Risk details are logged for review
+- Users are advised on safe practices
 
-1. Check Chrome extension console for errors
-2. Verify all permissions are granted
-3. Test with simple websites first
-4. Check API endpoint accessibility
+## 🔒 Privacy & Security
+
+- **Local Data Storage**: All data remains on your device
+- **No External Tracking**: Extension doesn't send data to external servers
+- **Transparent Operation**: Clear indication of what's being monitored
+- **User Control**: Easy enable/disable functionality
+- **Data Cleanup**: Options to clear stored information
+
+## 🚨 Privacy Risk Categories
+
+### High Risk
+
+- Social Security Numbers
+- Credit card information
+- Bank account details
+
+### Medium Risk
+
+- Phone numbers
+- Home addresses
+- Identity documents
+
+### Low Risk
+
+- Email addresses
+- General personal information
+- Non-sensitive data
+
+## 📊 Statistics & Analytics
+
+The extension provides real-time statistics:
+
+- Total bots detected
+- Conversations monitored
+- Privacy warnings issued
+- Last activity timestamps
+
+## 🎨 User Interface
+
+### Popup Features
+
+- Clean, modern design
+- Real-time status updates
+- Easy monitoring toggle
+- Detailed bot information
+- Data management tools
+
+### Warning System
+
+- Prominent visual alerts
+- Clear risk descriptions
+- Actionable recommendations
+- Dismissible notifications
+
+## 🔧 Configuration
+
+### API Keys
+
+To enable enhanced AI detection:
+
+1. Get a Gemini AI API key from Google
+2. Update the `GEMINI_API_KEY` in `background.js`
+3. Restart the extension
+
+### Customization
+
+- Modify risk detection patterns
+- Adjust warning thresholds
+- Customize notification settings
+- Add new bot detection rules
+
+## 🚀 Future Enhancements
+
+- **Machine Learning**: Improved bot detection accuracy
+- **Risk Prediction**: Proactive privacy protection
+- **User Education**: Privacy best practices guidance
+- **Integration**: Connect with other security tools
+- **Mobile Support**: Extend to mobile browsers
+
+## 🤝 Contributing
+
+We welcome contributions! Areas for improvement:
+
+- Enhanced bot detection algorithms
+- Additional privacy risk patterns
+- UI/UX improvements
+- Performance optimizations
+- Documentation updates
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## ⚠️ Disclaimer
+
+This extension is designed to help protect user privacy but cannot guarantee complete protection. Users should always exercise caution when sharing personal information online and use this tool as part of a comprehensive privacy strategy.
+
+## 🆘 Support
+
+For issues, questions, or contributions:
+
+- Check the documentation
+- Review existing issues
+- Create new issue reports
+- Submit pull requests
 
 ---
 
-**Note**: This extension captures sensitive network data. Use responsibly and ensure compliance with privacy laws and website terms of service.
-# reqlog
+**AI Bot Privacy Guard** - Protecting your privacy in the age of AI chatbots.

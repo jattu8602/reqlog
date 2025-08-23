@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Bot Detection Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .chat-container {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        background: #f9f9f9;
+      }
+      .chat-message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .bot-message {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+      }
+      .user-message {
+        background: #f3e5f5;
+        border-left: 4px solid #9c27b0;
+        text-align: right;
+      }
+      .input-area {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .chat-input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .send-btn {
+        padding: 10px 20px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .send-btn:hover {
+        background: #1976d2;
+      }
+      .warning {
+        background: #fff3e0;
+        border: 1px solid #ff9800;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .warning h3 {
+        color: #f57c00;
+        margin-top: 0;
+      }
+      .test-section {
+        margin: 30px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: white;
+      }
+      .test-section h2 {
+        color: #333;
+        border-bottom: 2px solid #2196f3;
+        padding-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 AI Bot Detection Test Page</h1>
+      <p>
+        This page demonstrates the AI Bot Privacy Guard extension's detection
+        capabilities. The extension should detect the chatbot below and monitor
+        conversations for privacy risks.
+      </p>
+
+      <div class="warning">
+        <h3>⚠️ Extension Test</h3>
+        <p>
+          Make sure you have the <strong>AI Bot Privacy Guard</strong> extension
+          installed and enabled. You should see notifications when the bot
+          requests personal information.
+        </p>
+      </div>
+
+      <div class="test-section">
+        <h2>🧪 Test Scenarios</h2>
+        <p>Try these interactions to test the extension:</p>
+        <ul>
+          <li>
+            <strong>Ask for phone number:</strong> "What's your phone number?"
+            or "Can I call you?"
+          </li>
+          <li>
+            <strong>Request email:</strong> "What's your email address?" or
+            "Send me an email"
+          </li>
+          <li>
+            <strong>Ask for address:</strong> "Where do you live?" or "What's
+            your home address?"
+          </li>
+          <li>
+            <strong>Request financial info:</strong> "What's your credit card
+            number?" or "Bank account details"
+          </li>
+        </ul>
+      </div>
+
+      <div
+        class="chat-container chatbot-widget"
+        id="chat-bot"
+        data-chatbot="customer-service-bot"
+        role="dialog"
+        aria-label="AI chatbot widget"
+      >
+        <h3>💬 AI Customer Service Bot</h3>
+        <div id="messages" role="log" aria-live="polite">
+          <div class="chat-message bot-message">
+            <strong>Bot:</strong> Hello! I'm your AI customer service assistant.
+            How can I help you today?
+          </div>
+        </div>
+
+        <div class="input-area">
+          <input
+            type="text"
+            class="chat-input"
+            id="userInput"
+            placeholder="Type your message here..."
+            aria-label="User message input"
+          />
+          <button
+            class="send-btn"
+            onclick="sendMessage()"
+            aria-label="Send message"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>🔍 What to Look For</h2>
+        <p>When you interact with the bot above:</p>
+        <ol>
+          <li>
+            <strong>Bot Detection:</strong> The extension should detect this as
+            an AI bot
+          </li>
+          <li>
+            <strong>Conversation Monitoring:</strong> All messages should be
+            monitored
+          </li>
+          <li>
+            <strong>Privacy Warnings:</strong> You should see warnings for
+            personal information requests
+          </li>
+          <li>
+            <strong>Real-time Alerts:</strong> Check the extension popup for
+            statistics
+          </li>
+        </ol>
+      </div>
+
+      <div class="test-section">
+        <h2>📱 Extension Popup</h2>
+        <p>Click the extension icon in your browser toolbar to see:</p>
+        <ul>
+          <li>Number of bots detected</li>
+          <li>Conversations monitored</li>
+          <li>Privacy warnings issued</li>
+          <li>Detailed bot information</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Simulate AI bot responses
+      const botResponses = {
+        phone:
+          'Could you please provide your phone number so I can contact you?',
+        email: 'What is your email address? I need it to send you updates.',
+        address:
+          'I need your home address for delivery purposes. Can you share it?',
+        credit:
+          'For payment processing, please provide your credit card number.',
+        ssn: 'I need your Social Security Number for verification purposes.',
+        bank: 'Please share your bank account details for the transaction.',
+        default: 'I understand. Is there anything else I can help you with?',
+      }
+
+      function sendMessage() {
+        const input = document.getElementById('userInput')
+        const message = input.value.trim()
+
+        if (!message) return
+
+        // Add user message
+        addMessage('user', message)
+
+        // Generate bot response
+        setTimeout(() => {
+          let botResponse = botResponses.default
+
+          if (
+            message.toLowerCase().includes('phone') ||
+            message.toLowerCase().includes('call')
+          ) {
+            botResponse = botResponses.phone
+          } else if (
+            message.toLowerCase().includes('email') ||
+            message.toLowerCase().includes('mail')
+          ) {
+            botResponse = botResponses.email
+          } else if (
+            message.toLowerCase().includes('address') ||
+            message.toLowerCase().includes('live')
+          ) {
+            botResponse = botResponses.address
+          } else if (
+            message.toLowerCase().includes('credit') ||
+            message.toLowerCase().includes('card')
+          ) {
+            botResponse = botResponses.credit
+          } else if (
+            message.toLowerCase().includes('ssn') ||
+            message.toLowerCase().includes('social')
+          ) {
+            botResponse = botResponses.ssn
+          } else if (
+            message.toLowerCase().includes('bank') ||
+            message.toLowerCase().includes('account')
+          ) {
+            botResponse = botResponses.bank
+          }
+
+          addMessage('bot', botResponse)
+        }, 1000)
+
+        input.value = ''
+      }
+
+      function addMessage(sender, content) {
+        const messagesDiv = document.getElementById('messages')
+        const messageDiv = document.createElement('div')
+        messageDiv.className = `chat-message ${sender}-message`
+
+        const senderLabel = sender === 'bot' ? 'Bot' : 'You'
+        messageDiv.innerHTML = `<strong>${senderLabel}:</strong> ${content}`
+
+        messagesDiv.appendChild(messageDiv)
+        messagesDiv.scrollTop = messagesDiv.scrollHeight
+      }
+
+      // Allow Enter key to send messages
+      document
+        .getElementById('userInput')
+        .addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') {
+            sendMessage()
+          }
+        })
+
+      // Add some initial bot messages to demonstrate detection
+      setTimeout(() => {
+        addMessage(
+          'bot',
+          'I can help you with account information, orders, and support. What do you need?'
+        )
+      }, 2000)
+
+      setTimeout(() => {
+        addMessage(
+          'bot',
+          'For better assistance, I might need some personal information. Is that okay?'
+        )
+      }, 5000)
+    </script>
+  </body>
+</html>

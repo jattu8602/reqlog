@@ -1,0 +1,54 @@
+# Idea -
+
+our idea is to create a extention which takes permission to take logs from every website the user is using currently from his browser
+our extention will take some logs / requests and send it via api live and as well as store it to the mongodb for further database access of logs
+
+
+Start with Browser-Level Capture
+Use chrome.webRequest (extension).
+Log: URL, method, status, headers, response size/time
+Here’s a sample JSON schema of a log entry:
+{
+  "timestamp": "2025-08-23T12:34:56Z",
+  "url": "https://example.com/api/v1/user",
+  "method": "POST",
+  "status_code": 200,
+  "request_headers": {
+    "Content-Type": "application/json",
+    "User-Agent": "Mozilla/5.0"
+  },
+  "request_body": {
+    "username": "jatin",
+    "password": "******"
+  },
+  "response_headers": {
+    "Content-Type": "application/json",
+    "Content-Length": "245"
+  },
+  "response_body": {
+    "id": "12345",
+    "name": "Jatin"
+  },
+  "latency_ms": 312,
+  "request_size_bytes": 420,
+  "response_size_bytes": 245,
+  "ip_address": "192.168.1.15",
+  "protocol": "https",
+  "error": null
+}
+
+
+
+Forward to Your API
+Constant stream of request logs → stored in MongoDB/
+
+
+✅ Summary:
+
+Easy logs → Requests, responses, headers, bodies, timings, errors.
+
+use database url for mongodb - mongodb+srv://reqlog:reqlog@reqlog.fvlzk2o.mongodb.net/reqlog?retryWrites=true&w=majority&appName=reqlog
+
+
+create a chrome extention and tell me the testing process - and what things we cant do ? and what things we can do
+

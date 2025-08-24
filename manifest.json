@@ -1,9 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "AI Bot Privacy Guard",
+  "name": "AI Bot Privacy Guard & Request Logger",
   "version": "1.0.0",
-  "description": "Detects AI bots on websites and warns users about potential privacy risks",
-  "permissions": ["storage", "activeTab", "tabs", "scripting", "notifications"],
+  "description": "Detects AI bots on websites, warns about privacy risks, and logs network requests to MongoDB",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "scripting",
+    "notifications",
+    "webRequest"
+  ],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
@@ -17,11 +24,11 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AI Bot Privacy Guard"
+    "default_title": "AI Bot Privacy Guard & Request Logger"
   },
   "icons": {
     "16": "icons/ext.png",
-    "48": "icons/ext_logo(48px).png",
-    "128": "icons/ext_logo(128px).png"
+    "48": "icons/ext_logo(48px).jpeg",
+    "128": "icons/ext_logo(128px).jpeg"
   }
 }

@@ -2,35 +2,113 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <div class="popup-box">
-    <div class="header">
-      <h1>🤖 AI Bot Privacy Guard</h1>
-      <div class="subtitle">Protecting your privacy from AI bots</div>
-    </div>
-
-    <div class="ai-status">
-      <span class="ai-icon">🔒</span>
-      Powered by Gemini AI for enhanced detection
-    </div>
-
-    <div class="status">
-      <div class="status-row">
-        <span>Monitoring Status:</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="monitoringToggle" checked />
-          <span class="slider"></span>
-        </label>
+      <div class="header">
+        <h1>🤖 AI Bot Privacy Guard & Request Logger</h1>
+        <div class="subtitle">
+          Protecting your privacy from AI bots & logging network requests
+        </div>
       </div>
-      <div class="status-row">
-        <span>Status:</span>
-        <span id="statusText">Active</span>
-      </div>
-    </div>
 
-    <div class="footer">Monitoring websites for AI bots...</div>
+      <div class="ai-status">
+        <span class="ai-icon">🔒</span>
+        Powered by enhanced detection & real-time logging
+      </div>
+
+      <!-- Monitoring Controls -->
+      <div class="status">
+        <div class="status-row">
+          <span>AI Bot Monitoring:</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="aiMonitoringToggle" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-row">
+          <span>Request Logging:</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="loggingToggle" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-row">
+          <span>Status:</span>
+          <span id="statusText">Active</span>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div class="stats">
+        <div class="stat-row">
+          <div class="stat-item">
+            <div class="stat-label">🤖 Bots Detected</div>
+            <div class="stat-value" id="botsDetected">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">💬 Conversations</div>
+            <div class="stat-value" id="conversations">0</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-item">
+            <div class="stat-label">⚠️ Privacy Warnings</div>
+            <div class="stat-value" id="privacyWarnings">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">🌐 Network Requests</div>
+            <div class="stat-value" id="networkRequests">0</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-item">
+            <div class="stat-label">🕒 Last Updated</div>
+            <div class="stat-value" id="lastUpdated">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions">
+        <button id="viewDashboard" class="btn btn-primary">📊 Dashboard</button>
+        <button id="viewDetails" class="btn btn-secondary">
+          🔍 Bot Details
+        </button>
+        <button id="clearData" class="btn btn-danger">🗑️ Clear Data</button>
+      </div>
+
+      <!-- Dashboard Section -->
+      <div id="dashboard" style="display: none">
+        <h3>📊 Recent Activity</h3>
+
+        <div class="dashboard-section">
+          <h4>⚠️ Recent Privacy Warnings</h4>
+          <div id="recentWarnings" class="dashboard-content">
+            <div class="loading">Loading warnings...</div>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h4>💬 Recent Conversations</h4>
+          <div id="recentConversations" class="dashboard-content">
+            <div class="loading">Loading conversations...</div>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h4>🌐 Recent Network Requests</h4>
+          <div id="recentRequests" class="dashboard-content">
+            <div class="loading">Loading requests...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>🤖 AI Bot Detection: <span id="aiStatus">Active</span></div>
+        <div>📝 Request Logging: <span id="loggingStatus">Active</span></div>
+      </div>
     </div>
 
     <script src="popup.js"></script>

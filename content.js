@@ -2,6 +2,10 @@
 ;(function () {
   'use strict'
 
+  console.log('🚀 AI Bot Privacy Guard Content Script Starting...')
+  console.log('📍 Current URL:', window.location.href)
+  console.log('🔍 Extension ID:', chrome.runtime.id)
+
   // Configuration
   const BOT_INDICATORS = [
     'chatbot',
@@ -58,16 +62,19 @@
 
   // Initialize bot detection
   function initializeBotDetection() {
-    console.log('AI Bot Privacy Guard: Starting bot detection...')
+    console.log('🤖 AI Bot Privacy Guard: Starting bot detection...')
 
     // Wait a bit for page to load
     setTimeout(() => {
+      console.log('🔍 Scanning for existing bots...')
       // Scan for existing bots
       scanForBots()
 
+      console.log('👀 Setting up page change monitoring...')
       // Monitor for dynamic bot additions
       observePageChanges()
 
+      console.log('💬 Starting conversation monitoring...')
       // Start conversation monitoring
       startConversationMonitoring()
     }, 1000)
@@ -75,13 +82,25 @@
 
   // Scan page for AI bots
   function scanForBots() {
+    console.log('🔍 Scanning page for AI bots...')
     const elements = document.querySelectorAll('*')
+    console.log(`📊 Found ${elements.length} elements to scan`)
 
+    let botCount = 0
     elements.forEach((element) => {
       if (isBotElement(element)) {
+        console.log(
+          '🤖 Bot element detected:',
+          element.tagName,
+          element.className,
+          element.id
+        )
         registerBot(element)
+        botCount++
       }
     })
+
+    console.log(`🤖 General scan found ${botCount} bot elements`)
 
     // Also check for common chat widget selectors
     const chatSelectors = [
@@ -116,18 +135,37 @@
       '[id*="bot"]',
     ]
 
+    let chatSelectorCount = 0
     chatSelectors.forEach((selector) => {
       try {
         const chatElements = document.querySelectorAll(selector)
+        if (chatElements.length > 0) {
+          console.log(
+            `🎯 Found ${chatElements.length} elements with selector: ${selector}`
+          )
+        }
         chatElements.forEach((element) => {
           if (element && !detectedBots.has(generateBotId(element))) {
+            console.log(
+              '💬 Chat widget detected via selector:',
+              selector,
+              element.tagName,
+              element.className,
+              element.id
+            )
             registerBot(element)
+            chatSelectorCount++
           }
         })
       } catch (e) {
         // Invalid selector, skip
       }
     })
+
+    console.log(
+      `💬 Chat selector scan found ${chatSelectorCount} additional bot elements`
+    )
+    console.log(`🎯 Total bots detected: ${detectedBots.size}`)
   }
 
   // Check if an element is likely an AI bot
@@ -249,31 +287,38 @@
   // Register a detected bot
   function registerBot(botElement) {
     const botId = generateBotId(botElement)
+    console.log('📝 Registering bot with ID:', botId)
 
     if (!detectedBots.has(botId)) {
-      detectedBots.set(botId, {
+      const botData = {
         id: botId,
         element: botElement,
         type: determineBotType(botElement),
         timestamp: new Date().toISOString(),
         url: window.location.href,
         isActive: false,
-      })
+      }
 
-      console.log('AI Bot detected:', detectedBots.get(botId))
+      detectedBots.set(botId, botData)
+      console.log('✅ Bot registered successfully:', botData)
 
       // Send bot detection to background script
       try {
+        console.log('📤 Sending bot detection to background script...')
         chrome.runtime.sendMessage({
           action: 'botDetected',
-          data: detectedBots.get(botId),
+          data: botData,
         })
+        console.log('✅ Bot detection message sent to background script')
       } catch (e) {
-        console.log('Could not send message to background script:', e)
+        console.error('❌ Could not send message to background script:', e)
       }
 
       // Start monitoring this specific bot
+      console.log('👀 Starting conversation monitoring for bot:', botId)
       monitorBotConversation(botElement, botId)
+    } else {
+      console.log('⚠️ Bot already registered with ID:', botId)
     }
   }
 

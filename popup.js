@@ -1,11 +1,15 @@
-// AI Bot Privacy Guard Popup Script
+// AI Bot Privacy Guard & Request Logger Popup Script
 document.addEventListener('DOMContentLoaded', function () {
-  const monitoringToggle = document.getElementById('monitoringToggle')
+  const aiMonitoringToggle = document.getElementById('aiMonitoringToggle')
+  const loggingToggle = document.getElementById('loggingToggle')
   const statusText = document.getElementById('statusText')
   const botsDetected = document.getElementById('botsDetected')
   const conversations = document.getElementById('conversations')
   const privacyWarnings = document.getElementById('privacyWarnings')
+  const networkRequests = document.getElementById('networkRequests')
   const lastUpdated = document.getElementById('lastUpdated')
+  const aiStatus = document.getElementById('aiStatus')
+  const loggingStatus = document.getElementById('loggingStatus')
   const viewDashboardBtn = document.getElementById('viewDashboard')
   const viewDetailsBtn = document.getElementById('viewDetails')
   const clearDataBtn = document.getElementById('clearData')
@@ -16,9 +20,14 @@ document.addEventListener('DOMContentLoaded', function () {
   loadStats()
 
   // Set up event listeners
-  monitoringToggle.addEventListener('change', function () {
+  aiMonitoringToggle.addEventListener('change', function () {
     const isEnabled = this.checked
-    toggleMonitoring(isEnabled)
+    toggleAIMonitoring(isEnabled)
+  })
+
+  loggingToggle.addEventListener('change', function () {
+    const isEnabled = this.checked
+    toggleLogging(isEnabled)
   })
 
   viewDashboardBtn.addEventListener('click', function () {
@@ -31,9 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   clearDataBtn.addEventListener('click', function () {
     if (
-      confirm(
-        'Are you sure you want to clear all bot detection data? This cannot be undone.'
-      )
+      confirm('Are you sure you want to clear all data? This cannot be undone.')
     ) {
       clearAllData()
     }
@@ -42,93 +49,41 @@ document.addEventListener('DOMContentLoaded', function () {
   // Load current monitoring status
   function loadStatus() {
     chrome.runtime.sendMessage({ action: 'getStatus' }, function (response) {
-      if (response && response.isMonitoringEnabled !== undefined) {
-        monitoringToggle.checked = response.isMonitoringEnabled
-        updateStatusText(response.isMonitoringEnabled)
+      if (response) {
+        if (response.isLoggingEnabled !== undefined) {
+          loggingToggle.checked = response.isLoggingEnabled
+          updateStatusText(response.isLoggingEnabled)
+          updateLoggingStatus(response.isLoggingEnabled)
+        }
+        if (response.isAIMonitoringEnabled !== undefined) {
+          aiMonitoringToggle.checked = response.isAIMonitoringEnabled
+          updateAIStatus(response.isAIMonitoringEnabled)
+        }
       }
     })
   }
 
   // Load statistics
   function loadStats() {
-    chrome.runtime.sendMessage({ action: 'getStatus' }, function (response) {
-      if (response && response.stats) {
-        const stats = response.stats
+    chrome.runtime.sendMessage({ action: 'getStats' }, function (response) {
+      if (response && response.isLoggingEnabled !== undefined) {
+        const stats = response
+
+        // Update statistics
         botsDetected.textContent = stats.totalBots || 0
         conversations.textContent = stats.totalConversations || 0
         privacyWarnings.textContent = stats.totalWarnings || 0
+        networkRequests.textContent = stats.totalRequests || 0
 
         // Update last updated time
-        if (stats.lastUpdated) {
-          const lastUpdate = new Date(stats.lastUpdated)
-          const now = new Date()
-          const diffMs = now - lastUpdate
-          const diffMins = Math.floor(diffMs / 60000)
-
-          if (diffMins < 1) {
-            lastUpdated.textContent = 'Just now'
-          } else if (diffMins < 60) {
-            lastUpdated.textContent = `${diffMins}m ago`
-          } else {
-            const diffHours = Math.floor(diffMins / 60)
-            lastUpdated.textContent = `${diffHours}h ago`
-          }
-        }
+        const now = new Date()
+        lastUpdated.textContent = 'Just now'
 
         // Update warning colors based on count
         updateWarningColors(stats.totalWarnings)
-
-        // Show queue status if available
-        if (response.queueStatus) {
-          showQueueStatus(response.queueStatus)
-        }
       }
     })
   }
-
-  // Show queue status
-  function showQueueStatus(queueStatus) {
-    const queueStatusDiv = document.getElementById('queueStatus')
-    const messageQueueCount = document.getElementById('messageQueueCount')
-    const warningQueueCount = document.getElementById('warningQueueCount')
-    const queueStatusText = document.getElementById('queueStatusText')
-
-    if (queueStatus.messageQueueSize > 0 || queueStatus.warningQueueSize > 0) {
-      queueStatusDiv.style.display = 'block'
-      messageQueueCount.textContent = queueStatus.messageQueueSize
-      warningQueueCount.textContent = queueStatus.warningQueueSize
-
-      if (queueStatus.isProcessing) {
-        queueStatusText.textContent = 'Processing...'
-        queueStatusText.style.color = '#4caf50'
-      } else {
-        queueStatusText.textContent = 'Queued'
-        queueStatusText.style.color = '#ff9800'
-      }
-    } else {
-      queueStatusDiv.style.display = 'none'
-    }
-  }
-
-  // Force sync button handler
-  document.getElementById('forceSync').addEventListener('click', function () {
-    this.disabled = true
-    this.textContent = '🔄 Syncing...'
-
-    chrome.runtime.sendMessage({ action: 'forceSync' }, function (response) {
-      if (response && response.success) {
-        showNotification('Forced sync completed!', 'success')
-        // Refresh stats after sync
-        setTimeout(loadStats, 2000)
-      } else {
-        showNotification('Force sync failed', 'error')
-      }
-
-      // Re-enable button
-      document.getElementById('forceSync').disabled = false
-      document.getElementById('forceSync').textContent = '🔄 Force Sync'
-    })
-  })
 
   // Update warning colors based on count
   function updateWarningColors(warningCount) {
@@ -141,16 +96,34 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Toggle monitoring on/off
-  function toggleMonitoring(enabled) {
+  // Toggle AI monitoring on/off
+  function toggleAIMonitoring(enabled) {
     chrome.runtime.sendMessage(
       {
-        action: 'toggleMonitoring',
+        action: 'toggleAIMonitoring',
+        enabled: enabled,
+      },
+      function (response) {
+        if (response && response.success) {
+          updateAIStatus(enabled)
+          // Refresh stats after toggle
+          setTimeout(loadStats, 1000)
+        }
+      }
+    )
+  }
+
+  // Toggle logging on/off
+  function toggleLogging(enabled) {
+    chrome.runtime.sendMessage(
+      {
+        action: 'toggleLogging',
         enabled: enabled,
       },
       function (response) {
         if (response && response.success) {
           updateStatusText(enabled)
+          updateLoggingStatus(enabled)
           // Refresh stats after toggle
           setTimeout(loadStats, 1000)
         }
@@ -164,6 +137,18 @@ document.addEventListener('DOMContentLoaded', function () {
     statusText.style.color = isEnabled ? '#4CAF50' : '#f44336'
   }
 
+  // Update AI status
+  function updateAIStatus(isEnabled) {
+    aiStatus.textContent = isEnabled ? 'Active' : 'Inactive'
+    aiStatus.style.color = isEnabled ? '#4CAF50' : '#f44336'
+  }
+
+  // Update logging status
+  function updateLoggingStatus(isEnabled) {
+    loggingStatus.textContent = isEnabled ? 'Active' : 'Inactive'
+    loggingStatus.style.color = isEnabled ? '#4CAF50' : '#f44336'
+  }
+
   // Toggle dashboard view
   function toggleDashboard() {
     if (dashboard.style.display === 'none' || !dashboard.style.display) {
@@ -172,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
       loadDashboardData()
     } else {
       dashboard.style.display = 'none'
-      viewDashboardBtn.textContent = 'Dashboard'
+      viewDashboardBtn.textContent = '📊 Dashboard'
     }
   }
 
@@ -180,11 +165,13 @@ document.addEventListener('DOMContentLoaded', function () {
   function loadDashboardData() {
     const recentWarnings = document.getElementById('recentWarnings')
     const recentConversations = document.getElementById('recentConversations')
+    const recentRequests = document.getElementById('recentRequests')
 
     // Show loading state
     recentWarnings.innerHTML = '<div class="loading">Loading warnings...</div>'
     recentConversations.innerHTML =
       '<div class="loading">Loading conversations...</div>'
+    recentRequests.innerHTML = '<div class="loading">Loading requests...</div>'
 
     chrome.runtime.sendMessage(
       { action: 'getDashboardData' },
@@ -203,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function displayDashboardData(mongoData, localStats) {
     const recentWarnings = document.getElementById('recentWarnings')
     const recentConversations = document.getElementById('recentConversations')
+    const recentRequests = document.getElementById('recentRequests')
 
     // Display warnings
     if (localStats.warnings && localStats.warnings.length > 0) {
@@ -265,6 +253,10 @@ document.addEventListener('DOMContentLoaded', function () {
       recentConversations.innerHTML =
         '<div class="conversation-item">No conversations monitored yet.</div>'
     }
+
+    // Display network requests (placeholder for now)
+    recentRequests.innerHTML =
+      '<div class="conversation-item">Network requests are logged in real-time to MongoDB</div>'
   }
 
   // View detailed bot information
@@ -397,6 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
         botsDetected.textContent = '0'
         conversations.textContent = '0'
         privacyWarnings.textContent = '0'
+        networkRequests.textContent = '0'
         lastUpdated.textContent = '-'
 
         // Reset warning colors

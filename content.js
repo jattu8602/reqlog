@@ -523,7 +523,7 @@
 
     // Enhanced risk detection
     const detectedRisks = detectPrivacyRisks(messageContent)
-    const riskLevel = calculateRiskSeverity(detectedRisks)
+    const riskLevel = getHighestRiskLevel(detectedRisks)
 
     const message = {
       botId,
@@ -618,76 +618,6 @@
     }
   }
 
-  // Detect privacy risks in message content
-  function detectPrivacyRisks(content) {
-    const risks = []
-
-    PRIVACY_RISK_PATTERNS.forEach((pattern, index) => {
-      if (pattern.test(content)) {
-        risks.push({
-          type: getRiskType(index),
-          pattern: pattern.source,
-          matched: content.match(pattern)[0],
-        })
-      }
-    })
-
-    return risks
-  }
-
-  // Get risk type based on pattern index
-  function getRiskType(index) {
-    const riskTypes = [
-      'phone_number',
-      'email',
-      'address',
-      'credit_card',
-      'ssn',
-      'birth_date',
-      'id_document',
-      'bank_account',
-      'security_question',
-      'income',
-      'name',
-      'age',
-      'location',
-      'city',
-      'country',
-      'zip_code',
-      'postal_code',
-      'company',
-      'job',
-      'occupation',
-    ]
-    return riskTypes[index] || 'unknown'
-  }
-
-  // Calculate risk severity
-  function calculateRiskSeverity(risks) {
-    const highRiskTypes = [
-      'ssn',
-      'credit_card',
-      'bank_account',
-      'passport',
-      'drivers_license',
-    ]
-    const mediumRiskTypes = [
-      'phone_number',
-      'address',
-      'id_document',
-      'email',
-      'birth_date',
-    ]
-
-    if (risks.some((risk) => highRiskTypes.includes(risk.type))) {
-      return 'high'
-    } else if (risks.some((risk) => mediumRiskTypes.includes(risk.type))) {
-      return 'medium'
-    } else {
-      return 'low'
-    }
-  }
-
   // Get surrounding text for context
   function getSurroundingText(element) {
     try {
@@ -721,7 +651,7 @@
     }
   }
 
-  // Enhanced privacy risk detection
+  // Detect privacy risks in message content
   function detectPrivacyRisks(text) {
     const risks = []
     const lowerText = text.toLowerCase()
@@ -820,6 +750,47 @@
     if (highRisk.includes(riskType)) return 'high'
     if (mediumRisk.includes(riskType)) return 'medium'
     return 'low'
+  }
+
+  // Get risk type based on pattern index
+  function getRiskType(index) {
+    const riskTypes = [
+      'phone_number',
+      'email',
+      'address',
+      'credit_card',
+      'ssn',
+      'birth_date',
+      'id_document',
+      'bank_account',
+      'security_question',
+      'income',
+      'name',
+      'age',
+      'location',
+      'city',
+      'country',
+      'zip_code',
+      'postal_code',
+      'company',
+      'job',
+      'occupation',
+    ]
+    return riskTypes[index] || 'unknown'
+  }
+
+  // Get highest risk level from a list of risks
+  function getHighestRiskLevel(risks) {
+    if (!risks || risks.length === 0) return 'low'
+    const severityOrder = ['low', 'medium', 'high', 'very_high']
+    let maxSeverityIndex = -1
+    risks.forEach((risk) => {
+      const index = severityOrder.indexOf(risk.severity)
+      if (index > maxSeverityIndex) {
+        maxSeverityIndex = index
+      }
+    })
+    return maxSeverityIndex > -1 ? severityOrder[maxSeverityIndex] : 'low'
   }
 
   // Show privacy warning to user

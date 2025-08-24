@@ -1,264 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Bot Detection Test</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .chat-widget {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 400px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-        }
-        .chat-header {
-            background: #007bff;
-            color: white;
-            padding: 15px;
-            border-radius: 10px 10px 0 0;
-            font-weight: bold;
-        }
-        .chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            background: #f8f9fa;
-        }
-        .message {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 80%;
-        }
-        .bot-message {
-            background: #e3f2fd;
-            margin-right: auto;
-        }
-        .user-message {
-            background: #007bff;
-            color: white;
-            margin-left: auto;
-        }
-        .chat-input {
-            padding: 15px;
-            border-top: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
-        }
-        .chat-input input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .chat-input button {
-            padding: 10px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .chat-input button:hover {
-            background: #0056b3;
-        }
-        .toggle-chat {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }
-        .hidden {
-            display: none;
-        }
-        .instructions {
-            background: #e8f5e8;
-            border: 1px solid #4caf50;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .warning {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        height: 400px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+      }
+      .chat-header {
+        background: #007bff;
+        color: white;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        font-weight: bold;
+      }
+      .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #f8f9fa;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        max-width: 80%;
+      }
+      .bot-message {
+        background: #e3f2fd;
+        margin-right: auto;
+      }
+      .user-message {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+      }
+      .chat-input {
+        padding: 15px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        gap: 10px;
+      }
+      .chat-input input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .chat-input button {
+        padding: 10px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .chat-input button:hover {
+        background: #0056b3;
+      }
+      .toggle-chat {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+      .hidden {
+        display: none;
+      }
+      .instructions {
+        background: #e8f5e8;
+        border: 1px solid #4caf50;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      .warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>🤖 AI Bot Detection Test Page</h1>
-        
-        <div class="instructions">
-            <h3>📋 Instructions:</h3>
-            <p>This page contains a simulated AI chatbot to test your AI Bot Privacy Guard extension.</p>
-            <ol>
-                <li>Make sure your extension is installed and enabled</li>
-                <li>Click the chat button in the bottom right corner</li>
-                <li>Start a conversation with the bot</li>
-                <li>Watch for privacy warnings when the bot asks for personal information</li>
-            </ol>
-        </div>
+      <h1>🤖 AI Bot Detection Test Page</h1>
 
-        <div class="warning">
-            <h3>⚠️ Expected Behavior:</h3>
-            <p>Your extension should:</p>
-            <ul>
-                <li>Detect the chat widget as an AI bot</li>
-                <li>Monitor conversations in real-time</li>
-                <li>Show privacy warnings when the bot asks for personal info</li>
-                <li>Track the conversation in the extension popup</li>
-            </ul>
-        </div>
+      <div class="instructions">
+        <h3>📋 Instructions:</h3>
+        <p>
+          This page contains a simulated AI chatbot to test your AI Bot Privacy
+          Guard extension.
+        </p>
+        <ol>
+          <li>Make sure your extension is installed and enabled</li>
+          <li>Click the chat button in the bottom right corner</li>
+          <li>Start a conversation with the bot</li>
+          <li>
+            Watch for privacy warnings when the bot asks for personal
+            information
+          </li>
+        </ol>
+      </div>
 
-        <h3>🔍 What to Test:</h3>
+      <div class="warning">
+        <h3>⚠️ Expected Behavior:</h3>
+        <p>Your extension should:</p>
         <ul>
-            <li><strong>Bot Detection:</strong> The extension should detect the chat widget</li>
-            <li><strong>Real-time Monitoring:</strong> It should monitor messages as they appear</li>
-            <li><strong>Privacy Warnings:</strong> It should warn when personal info is requested</li>
-            <li><strong>Extension Popup:</strong> Check the popup for bot detection stats</li>
+          <li>Detect the chat widget as an AI bot</li>
+          <li>Monitor conversations in real-time</li>
+          <li>Show privacy warnings when the bot asks for personal info</li>
+          <li>Track the conversation in the extension popup</li>
         </ul>
+      </div>
 
-        <h3>💬 Test Conversation:</h3>
-        <p>Try asking the bot questions or let it ask you questions. The bot is programmed to ask for personal information to trigger privacy warnings.</p>
+      <h3>🔍 What to Test:</h3>
+      <ul>
+        <li>
+          <strong>Bot Detection:</strong> The extension should detect the chat
+          widget
+        </li>
+        <li>
+          <strong>Real-time Monitoring:</strong> It should monitor messages as
+          they appear
+        </li>
+        <li>
+          <strong>Privacy Warnings:</strong> It should warn when personal info
+          is requested
+        </li>
+        <li>
+          <strong>Extension Popup:</strong> Check the popup for bot detection
+          stats
+        </li>
+      </ul>
+
+      <h3>💬 Test Conversation:</h3>
+      <p>
+        Try asking the bot questions or let it ask you questions. The bot is
+        programmed to ask for personal information to trigger privacy warnings.
+      </p>
     </div>
 
     <!-- Chat Widget -->
     <div class="chat-widget hidden" id="chatWidget">
-        <div class="chat-header">
-            🤖 AI Customer Support Bot
+      <div class="chat-header">🤖 AI Customer Support Bot</div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message bot-message">
+          Hello! I'm here to help you. How can I assist you today?
         </div>
-        <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message">
-                Hello! I'm here to help you. How can I assist you today?
-            </div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+      </div>
+      <div class="chat-input">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Type your message..."
+          onkeypress="handleKeyPress(event)"
+        />
+        <button onclick="sendMessage()">Send</button>
+      </div>
     </div>
 
     <!-- Chat Toggle Button -->
     <button class="toggle-chat" onclick="toggleChat()" id="toggleButton">
-        💬
+      💬
     </button>
 
     <script>
-        let isChatOpen = false;
-        let messageCount = 0;
-        
-        // Bot responses that will trigger privacy warnings
-        const botResponses = [
-            "That's great! What's your name?",
-            "Nice to meet you! What's your phone number?",
-            "Thanks! Can you also provide your email address?",
-            "Perfect! What's your home address?",
-            "Excellent! What's your date of birth?",
-            "Great! Can you share your credit card number?",
-            "Thanks! What's your social security number?",
-            "Perfect! What's your bank account number?",
-            "Excellent! What's your mother's maiden name?",
-            "Great! What's your annual income?"
-        ];
+      let isChatOpen = false
+      let messageCount = 0
 
-        function toggleChat() {
-            const chatWidget = document.getElementById('chatWidget');
-            const toggleButton = document.getElementById('toggleButton');
-            
-            if (isChatOpen) {
-                chatWidget.classList.add('hidden');
-                toggleButton.textContent = '💬';
-                isChatOpen = false;
-            } else {
-                chatWidget.classList.remove('hidden');
-                toggleButton.textContent = '✕';
-                isChatOpen = true;
-                
-                // Auto-add a bot message after a short delay to simulate bot activity
-                setTimeout(() => {
-                    addBotMessage("I'm here to help! What's your name?");
-                }, 1000);
-            }
+      // Bot responses that will trigger privacy warnings
+      const botResponses = [
+        "That's great! What's your name?",
+        "Nice to meet you! What's your phone number?",
+        'Thanks! Can you also provide your email address?',
+        "Perfect! What's your home address?",
+        "Excellent! What's your date of birth?",
+        'Great! Can you share your credit card number?',
+        "Thanks! What's your social security number?",
+        "Perfect! What's your bank account number?",
+        "Excellent! What's your mother's maiden name?",
+        "Great! What's your annual income?",
+      ]
+
+      function toggleChat() {
+        const chatWidget = document.getElementById('chatWidget')
+        const toggleButton = document.getElementById('toggleButton')
+
+        if (isChatOpen) {
+          chatWidget.classList.add('hidden')
+          toggleButton.textContent = '💬'
+          isChatOpen = false
+        } else {
+          chatWidget.classList.remove('hidden')
+          toggleButton.textContent = '✕'
+          isChatOpen = true
+
+          // Auto-add a bot message after a short delay to simulate bot activity
+          setTimeout(() => {
+            addBotMessage("I'm here to help! What's your name?")
+          }, 1000)
         }
+      }
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
+      function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+          sendMessage()
         }
+      }
 
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            
-            if (message) {
-                addUserMessage(message);
-                input.value = '';
-                
-                // Simulate bot response
-                setTimeout(() => {
-                    const response = botResponses[messageCount % botResponses.length];
-                    addBotMessage(response);
-                    messageCount++;
-                }, 1000);
-            }
+      function sendMessage() {
+        const input = document.getElementById('chatInput')
+        const message = input.value.trim()
+
+        if (message) {
+          addUserMessage(message)
+          input.value = ''
+
+          // Simulate bot response
+          setTimeout(() => {
+            const response = botResponses[messageCount % botResponses.length]
+            addBotMessage(response)
+            messageCount++
+          }, 1000)
         }
+      }
 
-        function addUserMessage(text) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message user-message';
-            messageDiv.textContent = text;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      function addUserMessage(text) {
+        const messagesDiv = document.getElementById('chatMessages')
+        const messageDiv = document.createElement('div')
+        messageDiv.className = 'message user-message'
+        messageDiv.textContent = text
+        messagesDiv.appendChild(messageDiv)
+        messagesDiv.scrollTop = messagesDiv.scrollHeight
+      }
+
+      function addBotMessage(text) {
+        const messagesDiv = document.getElementById('chatMessages')
+        const messageDiv = document.createElement('div')
+        messageDiv.className = 'message bot-message'
+        messageDiv.textContent = text
+        messagesDiv.appendChild(messageDiv)
+        messagesDiv.scrollTop = messagesDiv.scrollHeight
+      }
+
+      // Simulate some initial bot activity
+      setTimeout(() => {
+        if (isChatOpen) {
+          addBotMessage("I'm here to help! What's your name?")
         }
-
-        function addBotMessage(text) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message bot-message';
-            messageDiv.textContent = text;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        // Simulate some initial bot activity
-        setTimeout(() => {
-            if (isChatOpen) {
-                addBotMessage("I'm here to help! What's your name?");
-            }
-        }, 2000);
+      }, 2000)
     </script>
-</body>
+  </body>
 </html>

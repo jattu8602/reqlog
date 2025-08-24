@@ -21,7 +21,7 @@
   },
   "icons": {
     "16": "icons/ext.png",
-    "48": "icons/ext.png",
-    "128": "icons/ext.png"
+    "48": "icons/ext_logo(48px).png",
+    "128": "icons/ext_logo(128px).png"
   }
 }

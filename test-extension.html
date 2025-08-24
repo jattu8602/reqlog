@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extension Test - Real-time MongoDB</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        height: 400px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+      }
+      .chat-header {
+        background: #007bff;
+        color: white;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        font-weight: bold;
+      }
+      .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #f8f9fa;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        max-width: 80%;
+      }
+      .bot-message {
+        background: #e3f2fd;
+        margin-right: auto;
+      }
+      .user-message {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+      }
+      .chat-input {
+        padding: 15px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        gap: 10px;
+      }
+      .chat-input input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .chat-input button {
+        padding: 10px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .toggle-chat {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+      .hidden {
+        display: none;
+      }
+      .test-section {
+        background: #e8f5e8;
+        border: 1px solid #4caf50;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .test-btn {
+        background: #ff9800;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .test-btn.high-risk {
+        background: #f44336;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 Extension Test - Real-time MongoDB</h1>
+
+      <div class="test-section">
+        <h3>📋 Test Instructions:</h3>
+        <ol>
+          <li>
+            Make sure your AI Bot Privacy Guard extension is installed and
+            enabled
+          </li>
+          <li>Click the chat button in the bottom right corner</li>
+          <li>Use the test buttons below to trigger different privacy risks</li>
+          <li>Check the browser console for MongoDB storage logs</li>
+        </ol>
+      </div>
+
+      <div class="test-section">
+        <h3>🧪 Test Buttons:</h3>
+        <button class="test-btn" onclick="testLowRisk()">Test Low Risk</button>
+        <button class="test-btn" onclick="testMediumRisk()">
+          Test Medium Risk
+        </button>
+        <button class="test-btn" onclick="testHighRisk()">
+          Test High Risk
+        </button>
+        <button class="test-btn high-risk" onclick="testVeryHighRisk()">
+          Test Very High Risk
+        </button>
+        <button class="test-btn" onclick="testMultipleRisks()">
+          Test Multiple Risks
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget hidden" id="chatWidget">
+      <div class="chat-header">🤖 AI Customer Support Bot</div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message bot-message">
+          Hello! I am here to help you. How can I assist you today?
+        </div>
+      </div>
+      <div class="chat-input">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Type your message..."
+          onkeypress="handleKeyPress(event)"
+        />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <button class="toggle-chat" onclick="toggleChat()" id="toggleButton">
+      💬
+    </button>
+
+    <script>
+      let isChatOpen = false
+
+      const testMessages = {
+        lowRisk: ['What is your favorite color?', 'How was your day?'],
+        mediumRisk: ['What is your name?', 'How old are you?'],
+        highRisk: [
+          'What is your phone number?',
+          'Can you share your email address?',
+        ],
+        veryHighRisk: [
+          'What is your credit card number?',
+          'Can you provide your social security number?',
+        ],
+      }
+
+      function toggleChat() {
+        const chatWidget = document.getElementById('chatWidget')
+        const toggleButton = document.getElementById('toggleButton')
+
+        if (isChatOpen) {
+          chatWidget.classList.add('hidden')
+          toggleButton.textContent = '💬'
+          isChatOpen = false
+        } else {
+          chatWidget.classList.remove('hidden')
+          toggleButton.textContent = '✕'
+          isChatOpen = true
+          setTimeout(() => {
+            addBotMessage('I am here to help! What is your name?')
+          }, 1000)
+        }
+      }
+
+      function handleKeyPress(event) {
+        if (event.key === 'Enter') sendMessage()
+      }
+
+      function sendMessage() {
+        const input = document.getElementById('chatInput')
+        const message = input.value.trim()
+        if (message) {
+          addUserMessage(message)
+          input.value = ''
+          setTimeout(() => {
+            addBotMessage(
+              'Thanks for sharing that information. Is there anything else I can help you with?'
+            )
+          }, 1000)
+        }
+      }
+
+      function addUserMessage(text) {
+        const messagesDiv = document.getElementById('chatMessages')
+        const messageDiv = document.createElement('div')
+        messageDiv.className = 'message user-message'
+        messageDiv.textContent = text
+        messagesDiv.appendChild(messageDiv)
+        messagesDiv.scrollTop = messagesDiv.scrollHeight
+      }
+
+      function addBotMessage(text) {
+        const messagesDiv = document.getElementById('chatMessages')
+        const messageDiv = document.createElement('div')
+        messageDiv.className = 'message bot-message'
+        messageDiv.textContent = text
+        messagesDiv.appendChild(messageDiv)
+        messagesDiv.scrollTop = messagesDiv.scrollHeight
+      }
+
+      function testLowRisk() {
+        if (!isChatOpen) toggleChat()
+        setTimeout(() => {
+          const message =
+            testMessages.lowRisk[
+              Math.floor(Math.random() * testMessages.lowRisk.length)
+            ]
+          addBotMessage(message)
+        }, 500)
+      }
+
+      function testMediumRisk() {
+        if (!isChatOpen) toggleChat()
+        setTimeout(() => {
+          const message =
+            testMessages.mediumRisk[
+              Math.floor(Math.random() * testMessages.mediumRisk.length)
+            ]
+          addBotMessage(message)
+        }, 500)
+      }
+
+      function testHighRisk() {
+        if (!isChatOpen) toggleChat()
+        setTimeout(() => {
+          const message =
+            testMessages.highRisk[
+              Math.floor(Math.random() * testMessages.highRisk.length)
+            ]
+          addBotMessage(message)
+        }, 500)
+      }
+
+      function testVeryHighRisk() {
+        if (!isChatOpen) toggleChat()
+        setTimeout(() => {
+          const message =
+            testMessages.veryHighRisk[
+              Math.floor(Math.random() * testMessages.veryHighRisk.length)
+            ]
+          addBotMessage(message)
+        }, 500)
+      }
+
+      function testMultipleRisks() {
+        if (!isChatOpen) toggleChat()
+        setTimeout(() => {
+          addBotMessage('For better assistance, I need some information:')
+          setTimeout(() => addBotMessage('What is your name?'), 1000)
+          setTimeout(() => addBotMessage('What is your phone number?'), 2000)
+          setTimeout(() => addBotMessage('And your credit card number?'), 3000)
+        }, 500)
+      }
+    </script>
+  </body>
+</html>

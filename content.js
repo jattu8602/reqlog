@@ -23,7 +23,7 @@
     'chat support',
     'ai support',
     'virtual agent',
-    'chat agent'
+    'chat agent',
   ]
 
   const PRIVACY_RISK_PATTERNS = [
@@ -46,7 +46,7 @@
     /(?:what\s+is\s+your\s+)?postal\s*code/i,
     /(?:what\s+is\s+your\s+)?company/i,
     /(?:what\s+is\s+your\s+)?job/i,
-    /(?:what\s+is\s+your\s+)?occupation/i
+    /(?:what\s+is\s+your\s+)?occupation/i,
   ]
 
   // State management
@@ -113,13 +113,13 @@
       '[class*="chat"]',
       '[id*="chat"]',
       '[class*="bot"]',
-      '[id*="bot"]'
+      '[id*="bot"]',
     ]
 
-    chatSelectors.forEach(selector => {
+    chatSelectors.forEach((selector) => {
       try {
         const chatElements = document.querySelectorAll(selector)
-        chatElements.forEach(element => {
+        chatElements.forEach((element) => {
           if (element && !detectedBots.has(generateBotId(element))) {
             registerBot(element)
           }
@@ -143,9 +143,10 @@
     const id = (element.id || '').toLowerCase()
     const ariaLabel = (element.getAttribute('aria-label') || '').toLowerCase()
     const role = (element.getAttribute('role') || '').toLowerCase()
-    const dataAttributes = element.getAttributeNames()
-      .filter(attr => attr.startsWith('data-'))
-      .map(attr => element.getAttribute(attr).toLowerCase())
+    const dataAttributes = element
+      .getAttributeNames()
+      .filter((attr) => attr.startsWith('data-'))
+      .map((attr) => element.getAttribute(attr).toLowerCase())
 
     // 1. High-confidence attributes
     if (
@@ -158,8 +159,8 @@
     }
 
     // 2. Check data attributes for bot indicators
-    dataAttributes.forEach(attrValue => {
-      BOT_INDICATORS.forEach(indicator => {
+    dataAttributes.forEach((attrValue) => {
+      BOT_INDICATORS.forEach((indicator) => {
         if (attrValue.includes(indicator)) {
           score += 10
         }
@@ -188,7 +189,9 @@
     const hasMessageList = element.querySelector(
       '[role="log"], .messages, .chat-history, .chat-messages, .conversation'
     )
-    const hasSendButton = element.querySelector('button, [role="button"], .send-btn, .submit-btn')
+    const hasSendButton = element.querySelector(
+      'button, [role="button"], .send-btn, .submit-btn'
+    )
 
     if (hasInputField && (hasMessageList || hasSendButton)) {
       score += 12
@@ -212,7 +215,11 @@
     if (element.tagName === 'IFRAME') {
       try {
         const src = element.src.toLowerCase()
-        if (src.includes('bot') || src.includes('chat') || src.includes('widget')) {
+        if (
+          src.includes('bot') ||
+          src.includes('chat') ||
+          src.includes('widget')
+        ) {
           score += 15
         }
       } catch (e) {
@@ -250,7 +257,7 @@
         type: determineBotType(botElement),
         timestamp: new Date().toISOString(),
         url: window.location.href,
-        isActive: false
+        isActive: false,
       })
 
       console.log('AI Bot detected:', detectedBots.get(botId))
@@ -259,7 +266,7 @@
       try {
         chrome.runtime.sendMessage({
           action: 'botDetected',
-          data: detectedBots.get(botId)
+          data: detectedBots.get(botId),
         })
       } catch (e) {
         console.log('Could not send message to background script:', e)
@@ -276,7 +283,10 @@
     const classes = element.className || ''
     const id = element.id || ''
     const timestamp = Date.now()
-    return `${tag}-${classes.substring(0, 20)}-${id.substring(0, 20)}-${timestamp}`
+    return `${tag}-${classes.substring(0, 20)}-${id.substring(
+      0,
+      20
+    )}-${timestamp}`
   }
 
   // Determine bot type based on context
@@ -321,9 +331,19 @@
   // Find chat container within bot element
   function findChatContainer(botElement) {
     const selectors = [
-      '.chat-container', '.chat-window', '.conversation', '.messages', '.chat-area',
-      '.chat-messages', '.chat-history', '.chat-log', '.conversation-area',
-      '[role="log"]', '[role="dialog"]', '.chat-panel', '.chat-box'
+      '.chat-container',
+      '.chat-window',
+      '.conversation',
+      '.messages',
+      '.chat-area',
+      '.chat-messages',
+      '.chat-history',
+      '.chat-log',
+      '.conversation-area',
+      '[role="log"]',
+      '[role="dialog"]',
+      '.chat-panel',
+      '.chat-box',
     ]
 
     for (const selector of selectors) {
@@ -332,7 +352,9 @@
     }
 
     // If no specific container found, check if the bot element itself contains messages
-    if (botElement.querySelector('.message, .msg, .chat-msg, .bot-msg, .user-msg')) {
+    if (
+      botElement.querySelector('.message, .msg, .chat-msg, .bot-msg, .user-msg')
+    ) {
       return botElement
     }
 
@@ -342,16 +364,24 @@
   // Find input fields within bot element
   function findInputFields(botElement) {
     const selectors = [
-      'input[type="text"]', 'input[type="email"]', 'input[type="tel"]', 'textarea',
-      '.chat-input', '.message-input', '.bot-input', '.user-input',
-      '[contenteditable="true"]', '[role="textbox"]', '.input-field'
+      'input[type="text"]',
+      'input[type="email"]',
+      'input[type="tel"]',
+      'textarea',
+      '.chat-input',
+      '.message-input',
+      '.bot-input',
+      '.user-input',
+      '[contenteditable="true"]',
+      '[role="textbox"]',
+      '.input-field',
     ]
 
     const inputs = []
-    selectors.forEach(selector => {
+    selectors.forEach((selector) => {
       try {
         const elements = botElement.querySelectorAll(selector)
-        elements.forEach(el => inputs.push(el))
+        elements.forEach((el) => inputs.push(el))
       } catch (e) {
         // Invalid selector, skip
       }
@@ -385,7 +415,7 @@
     observer.observe(chatContainer, {
       childList: true,
       subtree: true,
-      characterData: true
+      characterData: true,
     })
 
     // Store observer for cleanup
@@ -435,8 +465,10 @@
                 processNewMessage(node, botId, 'bot')
               }
               // Also check children
-              const messageChildren = node.querySelectorAll('.message, .msg, .chat-msg, .bot-msg, .user-msg, [role="log"] > *')
-              messageChildren.forEach(child => {
+              const messageChildren = node.querySelectorAll(
+                '.message, .msg, .chat-msg, .bot-msg, .user-msg, [role="log"] > *'
+              )
+              messageChildren.forEach((child) => {
                 if (isMessageElement(child)) {
                   processNewMessage(child, botId, 'bot')
                 }
@@ -449,38 +481,49 @@
 
     observer.observe(botElement, {
       childList: true,
-      subtree: true
+      subtree: true,
     })
   }
 
   // Check if an element is a message element
   function isMessageElement(element) {
     if (!element || !element.textContent) return false
-    
+
     const text = element.textContent.trim()
     if (text.length < 3) return false
 
     const className = element.className?.toLowerCase() || ''
     const tagName = element.tagName?.toLowerCase() || ''
-    
+
     // Check for message-like classes
-    const messageClasses = ['message', 'msg', 'chat-msg', 'bot-msg', 'user-msg', 'conversation-item']
-    if (messageClasses.some(cls => className.includes(cls))) return true
-    
+    const messageClasses = [
+      'message',
+      'msg',
+      'chat-msg',
+      'bot-msg',
+      'user-msg',
+      'conversation-item',
+    ]
+    if (messageClasses.some((cls) => className.includes(cls))) return true
+
     // Check for message-like tags
     if (['p', 'div', 'span', 'li'].includes(tagName)) {
       // Check if it's not just a wrapper
       if (element.children.length <= 2) return true
     }
-    
+
     return false
   }
 
-  // Process new messages for privacy risks
+  // Process new message from bot or user
   function processNewMessage(element, botId, sender, content = null) {
     const messageContent = content || element.textContent?.trim() || ''
 
     if (!messageContent || messageContent.length < 3) return
+
+    // Enhanced risk detection
+    const detectedRisks = detectPrivacyRisks(messageContent)
+    const riskLevel = calculateRiskSeverity(detectedRisks)
 
     const message = {
       botId,
@@ -488,6 +531,15 @@
       content: messageContent,
       timestamp: new Date().toISOString(),
       url: window.location.href,
+      website: window.location.hostname,
+      detectedRisks,
+      riskLevel,
+      elementType: element.tagName?.toLowerCase(),
+      elementClasses: element.className || '',
+      elementId: element.id || '',
+      pageTitle: document.title,
+      userAgent: navigator.userAgent,
+      language: navigator.language,
     }
 
     // Add to conversation history
@@ -496,41 +548,66 @@
     }
     conversationHistory.get(botId).push(message)
 
-    // Check for privacy risks
-    const privacyRisks = detectPrivacyRisks(messageContent)
+    // ALWAYS send message to background script for MongoDB storage
+    try {
+      chrome.runtime.sendMessage({
+        action: 'conversationMessage',
+        data: message,
+      })
+      console.log(
+        'Message sent to background script for MongoDB storage:',
+        message
+      )
+    } catch (e) {
+      console.error('Could not send message to background script:', e)
+      // Store locally as fallback
+      storeMessageLocally(message)
+    }
 
-    if (privacyRisks.length > 0) {
+    // Check for privacy risks and create warnings
+    if (detectedRisks.length > 0) {
       const warning = {
-        ...message,
-        risks: privacyRisks,
-        severity: calculateRiskSeverity(privacyRisks),
+        botId,
+        sender,
+        content: messageContent,
+        risks: detectedRisks,
+        severity: riskLevel,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        website: window.location.hostname,
+        riskLevel,
+        pageTitle: document.title,
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        elementContext: {
+          tagName: element.tagName?.toLowerCase(),
+          className: element.className || '',
+          id: element.id || '',
+          parentElement: element.parentElement?.tagName?.toLowerCase() || '',
+          surroundingText: getSurroundingText(element),
+        },
       }
 
       privacyWarnings.push(warning)
 
-      // Send warning to background script
+      // ALWAYS send warning to background script for MongoDB storage
       try {
         chrome.runtime.sendMessage({
           action: 'privacyWarning',
-          data: warning
+          data: warning,
         })
+        console.log(
+          'Privacy warning sent to background script for MongoDB storage:',
+          warning
+        )
       } catch (e) {
-        console.log('Could not send warning to background script:', e)
+        console.error('Could not send warning to background script:', e)
+        // Store locally as fallback
+        storeWarningLocally(warning)
       }
 
       // Show immediate warning to user
       showPrivacyWarning(warning)
-    }
-
-    // Send message to background script
-    try {
-      chrome.runtime.sendMessage({
-        action: 'conversationMessage',
-        data: message
-      })
-    } catch (e) {
-      console.log('Could not send message to background script:', e)
-      console.log('Message content:', message)
     }
 
     // Update bot status to active
@@ -580,15 +657,27 @@
       'postal_code',
       'company',
       'job',
-      'occupation'
+      'occupation',
     ]
     return riskTypes[index] || 'unknown'
   }
 
   // Calculate risk severity
   function calculateRiskSeverity(risks) {
-    const highRiskTypes = ['ssn', 'credit_card', 'bank_account', 'passport', 'drivers_license']
-    const mediumRiskTypes = ['phone_number', 'address', 'id_document', 'email', 'birth_date']
+    const highRiskTypes = [
+      'ssn',
+      'credit_card',
+      'bank_account',
+      'passport',
+      'drivers_license',
+    ]
+    const mediumRiskTypes = [
+      'phone_number',
+      'address',
+      'id_document',
+      'email',
+      'birth_date',
+    ]
 
     if (risks.some((risk) => highRiskTypes.includes(risk.type))) {
       return 'high'
@@ -599,11 +688,147 @@
     }
   }
 
+  // Get surrounding text for context
+  function getSurroundingText(element) {
+    try {
+      const parent = element.parentElement
+      if (!parent) return ''
+
+      const siblings = Array.from(parent.children)
+      const currentIndex = siblings.indexOf(element)
+
+      let context = ''
+
+      // Get text from previous sibling
+      if (currentIndex > 0) {
+        const prevSibling = siblings[currentIndex - 1]
+        if (prevSibling.textContent) {
+          context += prevSibling.textContent.trim().substring(0, 100) + ' '
+        }
+      }
+
+      // Get text from next sibling
+      if (currentIndex < siblings.length - 1) {
+        const nextSibling = siblings[currentIndex + 1]
+        if (nextSibling.textContent) {
+          context += nextSibling.textContent.trim().substring(0, 100)
+        }
+      }
+
+      return context.trim()
+    } catch (e) {
+      return ''
+    }
+  }
+
+  // Enhanced privacy risk detection
+  function detectPrivacyRisks(text) {
+    const risks = []
+    const lowerText = text.toLowerCase()
+
+    PRIVACY_RISK_PATTERNS.forEach((pattern, index) => {
+      if (pattern.test(text)) {
+        const riskType = getRiskType(index)
+        const confidence = calculateConfidence(pattern, text)
+
+        risks.push({
+          type: riskType,
+          confidence: confidence,
+          pattern: pattern.source,
+          matchedText: text.match(pattern)?.[0] || '',
+          severity: getRiskSeverity(riskType),
+        })
+      }
+    })
+
+    // Additional context-based detection
+    if (lowerText.includes('verify') && lowerText.includes('identity')) {
+      risks.push({
+        type: 'identity_verification',
+        confidence: 'high',
+        pattern: 'context_based',
+        matchedText: 'identity verification request',
+        severity: 'high',
+      })
+    }
+
+    if (lowerText.includes('confirm') && lowerText.includes('account')) {
+      risks.push({
+        type: 'account_confirmation',
+        confidence: 'medium',
+        pattern: 'context_based',
+        matchedText: 'account confirmation request',
+        severity: 'medium',
+      })
+    }
+
+    return risks
+  }
+
+  // Calculate confidence level
+  function calculateConfidence(pattern, text) {
+    const match = text.match(pattern)
+    if (!match) return 'low'
+
+    const matchedText = match[0]
+    const textLength = text.length
+
+    // Higher confidence if the pattern is a significant part of the text
+    if (matchedText.length / textLength > 0.3) {
+      return 'very_high'
+    } else if (matchedText.length / textLength > 0.15) {
+      return 'high'
+    } else if (matchedText.length / textLength > 0.05) {
+      return 'medium'
+    } else {
+      return 'low'
+    }
+  }
+
+  // Get risk severity
+  function getRiskSeverity(riskType) {
+    const veryHighRisk = [
+      'ssn',
+      'credit_card',
+      'bank_account',
+      'passport',
+      'drivers_license',
+    ]
+    const highRisk = [
+      'phone_number',
+      'address',
+      'id_document',
+      'email',
+      'birth_date',
+      'identity_verification',
+    ]
+    const mediumRisk = [
+      'name',
+      'age',
+      'location',
+      'city',
+      'country',
+      'zip_code',
+      'postal_code',
+      'company',
+      'job',
+      'occupation',
+      'account_confirmation',
+    ]
+
+    if (veryHighRisk.includes(riskType)) return 'very_high'
+    if (highRisk.includes(riskType)) return 'high'
+    if (mediumRisk.includes(riskType)) return 'medium'
+    return 'low'
+  }
+
   // Show privacy warning to user
   function showPrivacyWarning(warning) {
     // Remove existing warnings for this bot
-    const existingWarnings = document.querySelectorAll(`[data-bot-id="${warning.botId}"]`)
-    existingWarnings.forEach(w => w.remove())
+    const existingWarnings = document.querySelectorAll(
+      `[data-bot-id="${warning.botId}"]`
+    )
+    existingWarnings.forEach((w) => w.remove())
 
     const warningDiv = document.createElement('div')
     warningDiv.className = 'ai-bot-privacy-warning'
@@ -714,7 +939,9 @@
         action: 'statusUpdate',
         data: {
           botsDetected: detectedBots.size,
-          conversationsMonitored: Array.from(conversationHistory.values()).reduce((sum, conv) => sum + conv.length, 0),
+          conversationsMonitored: Array.from(
+            conversationHistory.values()
+          ).reduce((sum, conv) => sum + conv.length, 0),
           privacyWarnings: privacyWarnings.length,
           isMonitoring,
           url: window.location.href,
@@ -723,6 +950,41 @@
       })
     } catch (e) {
       console.log('Could not send status update to background script:', e)
+    }
+  }
+
+  // Local storage fallback functions
+  function storeMessageLocally(message) {
+    try {
+      const localMessages = JSON.parse(
+        localStorage.getItem('localMessages') || '[]'
+      )
+      localMessages.push({
+        ...message,
+        storedLocally: true,
+        localTimestamp: new Date().toISOString(),
+      })
+      localStorage.setItem('localMessages', JSON.stringify(localMessages))
+      console.log('Message stored locally as fallback')
+    } catch (e) {
+      console.error('Failed to store message locally:', e)
+    }
+  }
+
+  function storeWarningLocally(warning) {
+    try {
+      const localWarnings = JSON.parse(
+        localStorage.getItem('localWarnings') || '[]'
+      )
+      localWarnings.push({
+        ...warning,
+        storedLocally: true,
+        localTimestamp: new Date().toISOString(),
+      })
+      localStorage.setItem('localWarnings', JSON.stringify(localWarnings))
+      console.log('Warning stored locally as fallback')
+    } catch (e) {
+      console.error('Failed to store warning locally:', e)
     }
   }
 
@@ -735,8 +997,6 @@
 
   // Send periodic status updates
   setInterval(sendStatusUpdate, 30000) // Every 30 seconds
-
-
 
   console.log('AI Bot Privacy Guard content script loaded')
 })()

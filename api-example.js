@@ -78,6 +78,110 @@ app.post('/api/warnings', async (req, res) => {
   }
 })
 
+// Batch store conversations
+app.post('/api/conversations/batch', async (req, res) => {
+  try {
+    const { mongodb_url, messages } = req.body
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'Invalid or empty messages array' })
+    }
+
+    console.log(`Processing batch of ${messages.length} conversations...`)
+
+    const collection = db.collection('conversations')
+    const results = []
+
+    // Process messages in smaller chunks to avoid memory issues
+    const chunkSize = 50
+    for (let i = 0; i < messages.length; i += chunkSize) {
+      const chunk = messages.slice(i, i + chunkSize)
+
+      const chunkResults = await collection.insertMany(
+        chunk.map((msg) => ({
+          ...msg,
+          createdAt: new Date(),
+          batchProcessed: true,
+          batchTimestamp: new Date().toISOString(),
+        }))
+      )
+
+      results.push(...Object.values(chunkResults.insertedIds))
+    }
+
+    console.log(
+      `Successfully processed ${messages.length} conversations in batch`
+    )
+    res.json({
+      success: true,
+      count: messages.length,
+      ids: results,
+      message: `Batch processed ${messages.length} conversations successfully`,
+    })
+  } catch (error) {
+    console.error('Error processing conversation batch:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Batch store warnings
+app.post('/api/warnings/batch', async (req, res) => {
+  try {
+    const { mongodb_url, warnings } = req.body
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    if (!warnings || !Array.isArray(warnings) || warnings.length === 0) {
+      return res.status(400).json({ error: 'Invalid or empty warnings array' })
+    }
+
+    console.log(`Processing batch of ${warnings.length} warnings...`)
+
+    const collection = db.collection('warnings')
+    const results = []
+
+    // Process warnings in smaller chunks to avoid memory issues
+    const chunkSize = 50
+    for (let i = 0; i < warnings.length; i += chunkSize) {
+      const chunk = warnings.slice(i, i + chunkSize)
+
+      const chunkResults = await collection.insertMany(
+        chunk.map((warning) => ({
+          ...warning,
+          createdAt: new Date(),
+          batchProcessed: true,
+          batchTimestamp: new Date().toISOString(),
+        }))
+      )
+
+      results.push(...Object.values(chunkResults.insertedIds))
+    }
+
+    console.log(`Successfully processed ${warnings.length} warnings in batch`)
+    res.json({
+      success: true,
+      count: warnings.length,
+      ids: results,
+      message: `Batch processed ${warnings.length} warnings successfully`,
+    })
+  } catch (error) {
+    console.error('Error processing warning batch:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Get dashboard data
 app.post('/api/dashboard', async (req, res) => {
   try {
@@ -321,6 +425,161 @@ app.get('/api/export', async (req, res) => {
     res.json(data)
   } catch (error) {
     console.error('Error exporting data:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Test endpoint to verify extension communication
+app.post('/api/test', async (req, res) => {
+  try {
+    const { mongodb_url, testData } = req.body
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    // Store test data
+    const collection = db.collection('test_data')
+    const result = await collection.insertOne({
+      ...testData,
+      testType: 'extension_test',
+      createdAt: new Date(),
+      timestamp: new Date().toISOString(),
+    })
+
+    console.log('Test data received and stored:', testData)
+    res.json({
+      success: true,
+      id: result.insertedId,
+      message: 'Test data received and stored successfully',
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Error processing test data:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get real-time stats
+app.get('/api/stats/realtime', async (req, res) => {
+  try {
+    const { mongodb_url } = req.query
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    // Get recent activity (last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+
+    const recentConversations = await db
+      .collection('conversations')
+      .find({ createdAt: { $gte: fiveMinutesAgo } })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray()
+
+    const recentWarnings = await db
+      .collection('warnings')
+      .find({ createdAt: { $gte: fiveMinutesAgo } })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray()
+
+    const totalConversations = await db
+      .collection('conversations')
+      .countDocuments()
+    const totalWarnings = await db.collection('warnings').countDocuments()
+
+    res.json({
+      success: true,
+      realtime: {
+        recentConversations,
+        recentWarnings,
+        totalConversations,
+        totalWarnings,
+        lastUpdated: new Date().toISOString(),
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching real-time stats:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get queue status and health
+app.get('/api/queue/status', async (req, res) => {
+  try {
+    const { mongodb_url } = req.query
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    // Get recent activity counts
+    const recentConversations = await db
+      .collection('conversations')
+      .find({ createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) } })
+      .count()
+
+    const recentWarnings = await db
+      .collection('warnings')
+      .find({ createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) } })
+      .count()
+
+    const totalConversations = await db
+      .collection('conversations')
+      .countDocuments()
+    const totalWarnings = await db.collection('warnings').countDocuments()
+
+    res.json({
+      success: true,
+      status: 'healthy',
+      recentActivity: {
+        conversations: recentConversations,
+        warnings: recentWarnings,
+      },
+      totals: {
+        conversations: totalConversations,
+        warnings: totalWarnings,
+      },
+      lastUpdated: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Error getting queue status:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Force process any pending data
+app.post('/api/queue/force-process', async (req, res) => {
+  try {
+    const { mongodb_url } = req.body
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    // This endpoint can be used to manually trigger processing
+    res.json({
+      success: true,
+      message: 'Force process endpoint ready',
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Error in force process endpoint:', error)
     res.status(500).json({ error: error.message })
   }
 })

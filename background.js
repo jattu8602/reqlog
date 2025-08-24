@@ -17,6 +17,204 @@ let botDetectionStats = {
   lastUpdated: new Date().toISOString(),
 }
 
+// Async Queue System for MongoDB operations
+class AsyncMongoDBQueue {
+  constructor() {
+    this.messageQueue = []
+    this.warningQueue = []
+    this.isProcessing = false
+    this.batchSize = 10
+    this.syncInterval = 30000 // 30 seconds
+    this.maxRetries = 3
+
+    // Start the async processing
+    this.startAsyncProcessing()
+  }
+
+  // Add message to queue
+  addMessage(messageData) {
+    this.messageQueue.push({
+      ...messageData,
+      queuedAt: new Date().toISOString(),
+      retryCount: 0,
+    })
+    console.log(
+      'Message added to async queue. Queue size:',
+      this.messageQueue.length
+    )
+  }
+
+  // Add warning to queue
+  addWarning(warningData) {
+    this.warningQueue.push({
+      ...warningData,
+      queuedAt: new Date().toISOString(),
+      retryCount: 0,
+    })
+    console.log(
+      'Warning added to async queue. Queue size:',
+      this.warningQueue.length
+    )
+  }
+
+  // Start async processing
+  startAsyncProcessing() {
+    // Process queues every 30 seconds
+    setInterval(() => {
+      this.processQueues()
+    }, this.syncInterval)
+
+    // Also process when queues get large
+    setInterval(() => {
+      if (
+        this.messageQueue.length >= this.batchSize ||
+        this.warningQueue.length >= this.batchSize
+      ) {
+        this.processQueues()
+      }
+    }, 5000) // Check every 5 seconds
+  }
+
+  // Process all queues asynchronously
+  async processQueues() {
+    if (this.isProcessing) {
+      console.log('Queue processing already in progress, skipping...')
+      return
+    }
+
+    this.isProcessing = true
+    console.log('Starting async queue processing...')
+
+    try {
+      // Process message queue
+      if (this.messageQueue.length > 0) {
+        await this.processMessageQueue()
+      }
+
+      // Process warning queue
+      if (this.warningQueue.length > 0) {
+        await this.processWarningQueue()
+      }
+
+      console.log('Async queue processing completed')
+    } catch (error) {
+      console.error('Error in async queue processing:', error)
+    } finally {
+      this.isProcessing = false
+    }
+  }
+
+  // Process message queue in batches
+  async processMessageQueue() {
+    const batch = this.messageQueue.splice(0, this.batchSize)
+    console.log(`Processing ${batch.length} messages from queue...`)
+
+    try {
+      const response = await fetch(
+        'http://localhost:3000/api/conversations/batch',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: batch,
+            mongodb_url: MONGODB_URL,
+          }),
+        }
+      )
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log(
+          `Successfully processed ${batch.length} messages. MongoDB IDs:`,
+          result.ids
+        )
+      } else {
+        // Re-queue failed messages with retry logic
+        this.handleFailedBatch(batch, 'messages')
+      }
+    } catch (error) {
+      console.error('Error processing message batch:', error)
+      this.handleFailedBatch(batch, 'messages')
+    }
+  }
+
+  // Process warning queue in batches
+  async processWarningQueue() {
+    const batch = this.warningQueue.splice(0, this.batchSize)
+    console.log(`Processing ${batch.length} warnings from queue...`)
+
+    try {
+      const response = await fetch('http://localhost:3000/api/warnings/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          warnings: batch,
+          mongodb_url: MONGODB_URL,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log(
+          `Successfully processed ${batch.length} warnings. MongoDB IDs:`,
+          result.ids
+        )
+      } else {
+        // Re-queue failed warnings with retry logic
+        this.handleFailedBatch(batch, 'warnings')
+      }
+    } catch (error) {
+      console.error('Error processing warning batch:', error)
+      this.handleFailedBatch(batch, 'warnings')
+    }
+  }
+
+  // Handle failed batches with retry logic
+  handleFailedBatch(batch, type) {
+    const failedItems = batch.filter((item) => {
+      if (item.retryCount < this.maxRetries) {
+        item.retryCount++
+        item.lastRetry = new Date().toISOString()
+        return true
+      } else {
+        console.error(`Item exceeded max retries, dropping:`, item)
+        return false
+      }
+    })
+
+    if (type === 'messages') {
+      this.messageQueue.unshift(...failedItems)
+    } else {
+      this.warningQueue.unshift(...failedItems)
+    }
+
+    console.log(`Re-queued ${failedItems.length} failed ${type} for retry`)
+  }
+
+  // Get queue status
+  getStatus() {
+    return {
+      messageQueueSize: this.messageQueue.length,
+      warningQueueSize: this.warningQueue.length,
+      isProcessing: this.isProcessing,
+      lastProcessed: new Date().toISOString(),
+    }
+  }
+
+  // Force immediate processing
+  async forceProcess() {
+    console.log('Force processing queues...')
+    await this.processQueues()
+  }
+}
+
+// Initialize the async queue
+const mongoDBQueue = new AsyncMongoDBQueue()
+
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
   console.log('AI Bot Privacy Guard extension installed')
@@ -60,6 +258,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({
         isMonitoringEnabled: isMonitoringEnabled,
         stats: botDetectionStats,
+        queueStatus: mongoDBQueue.getStatus(),
       })
       break
 
@@ -81,6 +280,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse(data)
       })
       return true // Keep message channel open for async response
+
+    case 'forceSync':
+      mongoDBQueue.forceProcess().then(() => {
+        sendResponse({ success: true, message: 'Forced sync completed' })
+      })
+      return true
   }
 })
 
@@ -126,6 +331,8 @@ function handleBotDetection(botData, tabId) {
 function handleConversationMessage(messageData, tabId) {
   if (!isMonitoringEnabled) return
 
+  console.log('Background: Processing conversation message:', messageData)
+
   const botId = messageData.botId
 
   // Initialize conversation history for this bot if it doesn't exist
@@ -150,11 +357,16 @@ function handleConversationMessage(messageData, tabId) {
   // Store in local storage
   chrome.storage.local.set({ botDetectionStats })
 
-  // Store in MongoDB
-  storeMessageInMongoDB(messageData, tabId)
+  // Add to async MongoDB queue (non-blocking)
+  mongoDBQueue.addMessage({
+    ...messageData,
+    tabId,
+    timestamp: new Date().toISOString(),
+  })
 
   // Analyze message for enhanced privacy risk detection using Gemini AI
   if (messageData.sender === 'bot') {
+    console.log('Background: Analyzing message with AI...')
     analyzeMessageWithAI(messageData, botId)
   }
 }
@@ -162,6 +374,8 @@ function handleConversationMessage(messageData, tabId) {
 // Handle privacy warnings
 function handlePrivacyWarning(warningData, tabId) {
   if (!isMonitoringEnabled) return
+
+  console.log('Background: Processing privacy warning:', warningData)
 
   // Add warning to list
   privacyWarnings.push({
@@ -177,8 +391,12 @@ function handlePrivacyWarning(warningData, tabId) {
   // Store in local storage
   chrome.storage.local.set({ botDetectionStats })
 
-  // Store warning in MongoDB
-  storeWarningInMongoDB(warningData, tabId)
+  // Add to async MongoDB queue (non-blocking)
+  mongoDBQueue.addWarning({
+    ...warningData,
+    tabId,
+    timestamp: new Date().toISOString(),
+  })
 
   // Send notification to user
   try {
@@ -196,7 +414,7 @@ function handlePrivacyWarning(warningData, tabId) {
   }
 
   // Log warning
-  console.log('Privacy warning:', warningData)
+  console.log('Privacy warning processed and queued:', warningData)
 }
 
 // Handle status updates from content scripts
@@ -219,6 +437,8 @@ function handleStatusUpdate(statusData, tabId) {
 // Store message in MongoDB
 async function storeMessageInMongoDB(messageData, tabId) {
   try {
+    console.log('Attempting to store message in MongoDB:', messageData)
+
     const messageDoc = {
       botId: messageData.botId,
       sender: messageData.sender,
@@ -228,7 +448,11 @@ async function storeMessageInMongoDB(messageData, tabId) {
       tabId: tabId,
       website: new URL(messageData.url).hostname,
       createdAt: new Date(),
+      riskLevel: messageData.riskLevel || 'none',
+      detectedRisks: messageData.detectedRisks || [],
     }
+
+    console.log('Prepared message document:', messageDoc)
 
     const response = await fetch('http://localhost:3000/api/conversations', {
       method: 'POST',
@@ -242,18 +466,29 @@ async function storeMessageInMongoDB(messageData, tabId) {
     })
 
     if (!response.ok) {
-      console.error('Failed to store message in MongoDB:', response.status)
+      const errorText = await response.text()
+      console.error(
+        'Failed to store message in MongoDB:',
+        response.status,
+        errorText
+      )
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
     } else {
-      console.log('Message stored in MongoDB successfully')
+      const result = await response.json()
+      console.log('Message stored in MongoDB successfully:', result)
     }
   } catch (error) {
-    console.log('Error storing message in MongoDB:', error)
+    console.error('Error storing message in MongoDB:', error)
+    // Store locally as fallback
+    storeMessageLocally(messageDoc)
   }
 }
 
 // Store warning in MongoDB
 async function storeWarningInMongoDB(warningData, tabId) {
   try {
+    console.log('Attempting to store warning in MongoDB:', warningData)
+
     const warningDoc = {
       botId: warningData.botId,
       sender: warningData.sender,
@@ -265,7 +500,12 @@ async function storeWarningInMongoDB(warningData, tabId) {
       tabId: tabId,
       website: new URL(warningData.url).hostname,
       createdAt: new Date(),
+      riskLevel: determineRiskLevel(warningData.risks),
+      aiAnalysis: warningData.aiAnalysis || null,
+      userAction: 'warning_shown',
     }
+
+    console.log('Prepared warning document:', warningDoc)
 
     const response = await fetch('http://localhost:3000/api/warnings', {
       method: 'POST',
@@ -279,12 +519,76 @@ async function storeWarningInMongoDB(warningData, tabId) {
     })
 
     if (!response.ok) {
-      console.error('Failed to store warning in MongoDB:', response.status)
+      const errorText = await response.text()
+      console.error(
+        'Failed to store warning in MongoDB:',
+        response.status,
+        errorText
+      )
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
     } else {
-      console.log('Warning stored in MongoDB successfully')
+      const result = await response.json()
+      console.log('Warning stored in MongoDB successfully:', result)
     }
   } catch (error) {
-    console.log('Error storing warning in MongoDB:', error)
+    console.error('Error storing warning in MongoDB:', error)
+    // Store locally as fallback
+    storeWarningLocally(warningDoc)
+  }
+}
+
+// Determine risk level based on risks
+function determineRiskLevel(risks) {
+  if (!risks || risks.length === 0) return 'none'
+
+  const highRiskTypes = [
+    'ssn',
+    'credit_card',
+    'bank_account',
+    'passport',
+    'drivers_license',
+  ]
+  const mediumRiskTypes = [
+    'phone_number',
+    'address',
+    'id_document',
+    'email',
+    'birth_date',
+  ]
+
+  if (risks.some((risk) => highRiskTypes.includes(risk.type))) {
+    return 'very_high'
+  } else if (risks.some((risk) => mediumRiskTypes.includes(risk.type))) {
+    return 'high'
+  } else {
+    return 'medium'
+  }
+}
+
+// Local fallback storage
+function storeMessageLocally(messageDoc) {
+  try {
+    const localMessages = JSON.parse(
+      localStorage.getItem('localMessages') || '[]'
+    )
+    localMessages.push(messageDoc)
+    localStorage.setItem('localMessages', JSON.stringify(localMessages))
+    console.log('Message stored locally as fallback')
+  } catch (e) {
+    console.error('Failed to store message locally:', e)
+  }
+}
+
+function storeWarningLocally(warningDoc) {
+  try {
+    const localWarnings = JSON.parse(
+      localStorage.getItem('localWarnings') || '[]'
+    )
+    localWarnings.push(warningDoc)
+    localStorage.setItem('localWarnings', JSON.stringify(localWarnings))
+    console.log('Warning stored locally as fallback')
+  } catch (e) {
+    console.error('Failed to store warning locally:', e)
   }
 }
 
@@ -402,6 +706,7 @@ async function analyzeMessageWithAI(messageData, botId) {
             recommendation: analysis.recommendation,
             timestamp: new Date().toISOString(),
             url: messageData.url,
+            aiAnalysis: analysis, // Store AI analysis for enhanced warnings
           }
 
           // Add to warnings
@@ -525,5 +830,100 @@ setInterval(() => {
   // Store updated stats
   chrome.storage.local.set({ botDetectionStats })
 }, 60 * 60 * 1000) // Every hour
+
+// Sync local data with MongoDB when server becomes available
+async function syncLocalDataWithMongoDB() {
+  try {
+    // Check if server is available
+    const healthResponse = await fetch('http://localhost:3000/health')
+    if (!healthResponse.ok) {
+      console.log('MongoDB server not available, skipping sync')
+      return
+    }
+
+    console.log('MongoDB server available, syncing local data...')
+
+    // Sync local messages
+    const localMessages = JSON.parse(
+      localStorage.getItem('localMessages') || '[]'
+    )
+    if (localMessages.length > 0) {
+      console.log(`Syncing ${localMessages.length} local messages...`)
+
+      for (const message of localMessages) {
+        try {
+          const response = await fetch(
+            'http://localhost:3000/api/conversations',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...message,
+                mongodb_url: MONGODB_URL,
+                synced: true,
+              }),
+            }
+          )
+
+          if (response.ok) {
+            console.log('Local message synced successfully:', message.id)
+          }
+        } catch (e) {
+          console.error('Failed to sync local message:', e)
+        }
+      }
+
+      // Clear synced messages
+      localStorage.removeItem('localMessages')
+      console.log('Local messages synced and cleared')
+    }
+
+    // Sync local warnings
+    const localWarnings = JSON.parse(
+      localStorage.getItem('localWarnings') || '[]'
+    )
+    if (localWarnings.length > 0) {
+      console.log(`Syncing ${localWarnings.length} local warnings...`)
+
+      for (const warning of localWarnings) {
+        try {
+          const response = await fetch('http://localhost:3000/api/warnings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...warning,
+              mongodb_url: MONGODB_URL,
+              synced: true,
+            }),
+          })
+
+          if (response.ok) {
+            console.log('Local warning synced successfully:', warning.id)
+          }
+        } catch (e) {
+          console.error('Failed to sync local warning:', e)
+        }
+      }
+
+      // Clear synced warnings
+      localStorage.removeItem('localWarnings')
+      console.log('Local warnings synced and cleared')
+    }
+  } catch (error) {
+    console.log('Error syncing local data:', error)
+  }
+}
+
+// Try to sync data every 30 seconds
+setInterval(syncLocalDataWithMongoDB, 30000)
+
+// Also try to sync when the extension starts
+chrome.runtime.onStartup.addListener(() => {
+  setTimeout(syncLocalDataWithMongoDB, 5000) // Wait 5 seconds after startup
+})
 
 console.log('AI Bot Privacy Guard background script loaded')

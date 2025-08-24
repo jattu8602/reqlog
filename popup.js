@@ -77,9 +77,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Update warning colors based on count
         updateWarningColors(stats.totalWarnings)
+
+        // Show queue status if available
+        if (response.queueStatus) {
+          showQueueStatus(response.queueStatus)
+        }
       }
     })
   }
+
+  // Show queue status
+  function showQueueStatus(queueStatus) {
+    const queueStatusDiv = document.getElementById('queueStatus')
+    const messageQueueCount = document.getElementById('messageQueueCount')
+    const warningQueueCount = document.getElementById('warningQueueCount')
+    const queueStatusText = document.getElementById('queueStatusText')
+
+    if (queueStatus.messageQueueSize > 0 || queueStatus.warningQueueSize > 0) {
+      queueStatusDiv.style.display = 'block'
+      messageQueueCount.textContent = queueStatus.messageQueueSize
+      warningQueueCount.textContent = queueStatus.warningQueueSize
+
+      if (queueStatus.isProcessing) {
+        queueStatusText.textContent = 'Processing...'
+        queueStatusText.style.color = '#4caf50'
+      } else {
+        queueStatusText.textContent = 'Queued'
+        queueStatusText.style.color = '#ff9800'
+      }
+    } else {
+      queueStatusDiv.style.display = 'none'
+    }
+  }
+
+  // Force sync button handler
+  document.getElementById('forceSync').addEventListener('click', function () {
+    this.disabled = true
+    this.textContent = '🔄 Syncing...'
+
+    chrome.runtime.sendMessage({ action: 'forceSync' }, function (response) {
+      if (response && response.success) {
+        showNotification('Forced sync completed!', 'success')
+        // Refresh stats after sync
+        setTimeout(loadStats, 2000)
+      } else {
+        showNotification('Force sync failed', 'error')
+      }
+
+      // Re-enable button
+      document.getElementById('forceSync').disabled = false
+      document.getElementById('forceSync').textContent = '🔄 Force Sync'
+    })
+  })
 
   // Update warning colors based on count
   function updateWarningColors(warningCount) {

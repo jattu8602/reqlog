@@ -301,6 +301,63 @@
         font-size: 12px;
         text-align: center;
       }
+
+      .queue-status {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+      }
+
+      .queue-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .queue-header span {
+        font-size: 14px;
+        font-weight: 600;
+        color: #ff9800;
+      }
+
+      .force-sync-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background 0.3s;
+      }
+
+      .force-sync-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .queue-details {
+        display: flex;
+        justify-content: space-around;
+        font-size: 12px;
+        color: #fff;
+      }
+
+      .queue-item {
+        text-align: center;
+      }
+
+      .queue-count {
+        font-weight: 600;
+        color: #4caf50;
+      }
+
+      .queue-status-text {
+        font-weight: 600;
+        color: #ff9800;
+      }
     </style>
   </head>
   <body>
@@ -344,6 +401,27 @@
       <div class="stat-item">
         <span>Last Updated:</span>
         <span class="stat-value" id="lastUpdated">-</span>
+      </div>
+    </div>
+
+    <div class="queue-status" id="queueStatus" style="display: none">
+      <div class="queue-header">
+        <span>📊 MongoDB Queue Status</span>
+        <button class="force-sync-btn" id="forceSync">🔄 Force Sync</button>
+      </div>
+      <div class="queue-details">
+        <div class="queue-item">
+          <span>Messages in Queue:</span>
+          <span class="queue-count" id="messageQueueCount">0</span>
+        </div>
+        <div class="queue-item">
+          <span>Warnings in Queue:</span>
+          <span class="queue-count" id="warningQueueCount">0</span>
+        </div>
+        <div class="queue-item">
+          <span>Status:</span>
+          <span class="queue-status-text" id="queueStatusText">Idle</span>
+        </div>
       </div>
     </div>
 

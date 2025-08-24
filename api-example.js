@@ -4,163 +4,335 @@ const { MongoClient } = require('mongodb')
 const cors = require('cors')
 
 const app = express()
-const PORT = process.env.PORT || 3000
+const PORT = 3000
 
 // Middleware
 app.use(cors())
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json())
 
 // MongoDB connection
-const MONGODB_URL =
-  'mongodb+srv://reqlog:reqlog@reqlog.fvlzk2o.mongodb.net/reqlog?retryWrites=true&w=majority&appName=reqlog'
 let db
 
-// Connect to MongoDB
-async function connectToMongoDB() {
+async function connectToMongoDB(mongodbUrl) {
   try {
-    const client = new MongoClient(MONGODB_URL)
+    const client = new MongoClient(mongodbUrl)
     await client.connect()
-    db = client.db('reqlog')
+    db = client.db()
     console.log('Connected to MongoDB')
-
-    // Create indexes for better performance
-    await db.collection('logs').createIndex({ timestamp: -1 })
-    await db.collection('logs').createIndex({ url: 1 })
-    await db.collection('logs').createIndex({ method: 1 })
+    return true
   } catch (error) {
-    console.error('MongoDB connection error:', error)
+    console.error('MongoDB connection failed:', error)
+    return false
   }
 }
 
-// API endpoint to receive logs
-app.post('/api/logs', async (req, res) => {
+// API Routes
+
+// Store conversation messages
+app.post('/api/conversations', async (req, res) => {
   try {
-    const logEntry = req.body
+    const { mongodb_url, ...messageData } = req.body
 
-    // Add server timestamp
-    logEntry.server_received_at = new Date().toISOString()
-
-    // Clean up sensitive data (optional)
-    if (logEntry.request_body && logEntry.request_body.password) {
-      logEntry.request_body.password = '***REDACTED***'
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
     }
 
-    // Store in MongoDB
-    if (db) {
-      const result = await db.collection('logs').insertOne(logEntry)
-      console.log(`Log stored with ID: ${result.insertedId}`)
-    }
-
-    // Log to console for debugging
-    console.log('Received log:', {
-      url: logEntry.url,
-      method: logEntry.method,
-      status: logEntry.status_code,
-      timestamp: logEntry.timestamp,
+    const collection = db.collection('conversations')
+    const result = await collection.insertOne({
+      ...messageData,
+      createdAt: new Date(),
     })
 
-    res.status(200).json({
-      success: true,
-      message: 'Log received and stored',
-      logId: db ? result.insertedId : null,
-    })
+    res.json({ success: true, id: result.insertedId })
   } catch (error) {
-    console.error('Error processing log:', error)
-    res.status(500).json({
-      success: false,
-      error: 'Failed to process log',
-    })
+    console.error('Error storing conversation:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 
-// Get logs (for debugging/viewing)
-app.get('/api/logs', async (req, res) => {
+// Store privacy warnings
+app.post('/api/warnings', async (req, res) => {
   try {
+    const { mongodb_url, ...warningData } = req.body
+
     if (!db) {
-      return res.status(500).json({ error: 'Database not connected' })
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
     }
 
-    const limit = parseInt(req.query.limit) || 100
-    const logs = await db
-      .collection('logs')
+    const collection = db.collection('warnings')
+    const result = await collection.insertOne({
+      ...warningData,
+      createdAt: new Date(),
+    })
+
+    res.json({ success: true, id: result.insertedId })
+  } catch (error) {
+    console.error('Error storing warning:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get dashboard data
+app.post('/api/dashboard', async (req, res) => {
+  try {
+    const { mongodb_url } = req.body
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    // Get recent warnings
+    const warningsCollection = db.collection('warnings')
+    const recentWarnings = await warningsCollection
       .find({})
-      .sort({ timestamp: -1 })
-      .limit(limit)
+      .sort({ createdAt: -1 })
+      .limit(10)
       .toArray()
 
-    res.json({
-      success: true,
-      count: logs.length,
-      logs: logs,
-    })
-  } catch (error) {
-    console.error('Error fetching logs:', error)
-    res.status(500).json({ error: 'Failed to fetch logs' })
-  }
-})
+    // Get recent conversations
+    const conversationsCollection = db.collection('conversations')
+    const recentConversations = await conversationsCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .toArray()
 
-// Get statistics
-app.get('/api/stats', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(500).json({ error: 'Database not connected' })
-    }
+    // Get statistics
+    const totalWarnings = await warningsCollection.countDocuments()
+    const totalConversations = await conversationsCollection.countDocuments()
 
-    const stats = await db
-      .collection('logs')
+    // Get unique websites
+    const uniqueWebsites = await conversationsCollection.distinct('website')
+
+    // Get risk analysis
+    const riskAnalysis = await warningsCollection
       .aggregate([
         {
           $group: {
-            _id: null,
-            totalLogs: { $sum: 1 },
-            uniqueUrls: { $addToSet: '$url' },
-            methods: { $addToSet: '$method' },
-            avgLatency: { $avg: '$latency_ms' },
-            totalErrors: {
-              $sum: { $cond: [{ $ne: ['$error', null] }, 1, 0] },
+            _id: '$severity',
+            count: { $sum: 1 },
+          },
+        },
+      ])
+      .toArray()
+
+    // Get website analysis
+    const websiteAnalysis = await warningsCollection
+      .aggregate([
+        {
+          $group: {
+            _id: '$website',
+            warningCount: { $sum: 1 },
+            highRiskCount: {
+              $sum: {
+                $cond: [{ $eq: ['$severity', 'high'] }, 1, 0],
+              },
             },
+            lastWarning: { $max: '$createdAt' },
           },
         },
         {
-          $project: {
-            _id: 0,
-            totalLogs: 1,
-            uniqueUrls: { $size: '$uniqueUrls' },
-            methods: 1,
-            avgLatency: { $round: ['$avgLatency', 2] },
-            totalErrors: 1,
-          },
+          $sort: { warningCount: -1 },
+        },
+        {
+          $limit: 10,
         },
       ])
       .toArray()
 
     res.json({
       success: true,
-      stats: stats[0] || {},
+      data: {
+        recentWarnings,
+        recentConversations,
+        statistics: {
+          totalWarnings,
+          totalConversations,
+          uniqueWebsites: uniqueWebsites.length,
+        },
+        riskAnalysis,
+        websiteAnalysis,
+        lastUpdated: new Date().toISOString(),
+      },
     })
   } catch (error) {
-    console.error('Error fetching stats:', error)
-    res.status(500).json({ error: 'Failed to fetch stats' })
+    console.error('Error fetching dashboard data:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get conversation history
+app.get('/api/conversations/:botId', async (req, res) => {
+  try {
+    const { botId } = req.params
+    const { mongodb_url } = req.query
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    const collection = db.collection('conversations')
+    const conversations = await collection
+      .find({ botId })
+      .sort({ timestamp: 1 })
+      .toArray()
+
+    res.json({ success: true, conversations })
+  } catch (error) {
+    console.error('Error fetching conversations:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get warning history
+app.get('/api/warnings', async (req, res) => {
+  try {
+    const { website, severity, limit = 50 } = req.query
+    const { mongodb_url } = req.query
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    const collection = db.collection('warnings')
+    let query = {}
+
+    if (website) query.website = website
+    if (severity) query.severity = severity
+
+    const warnings = await collection
+      .find(query)
+      .sort({ timestamp: -1 })
+      .limit(parseInt(limit))
+      .toArray()
+
+    res.json({ success: true, warnings })
+  } catch (error) {
+    console.error('Error fetching warnings:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get website analysis
+app.get('/api/websites/analysis', async (req, res) => {
+  try {
+    const { mongodb_url } = req.query
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    const warningsCollection = db.collection('warnings')
+    const conversationsCollection = db.collection('conversations')
+
+    const websiteAnalysis = await warningsCollection
+      .aggregate([
+        {
+          $group: {
+            _id: '$website',
+            totalWarnings: { $sum: 1 },
+            highRiskWarnings: {
+              $sum: {
+                $cond: [{ $eq: ['$severity', 'high'] }, 1, 0],
+              },
+            },
+            mediumRiskWarnings: {
+              $sum: {
+                $cond: [{ $eq: ['$severity', 'medium'] }, 1, 0],
+              },
+            },
+            lowRiskWarnings: {
+              $sum: {
+                $cond: [{ $eq: ['$severity', 'low'] }, 1, 0],
+              },
+            },
+            lastWarning: { $max: '$timestamp' },
+            riskTypes: { $addToSet: '$risks.type' },
+          },
+        },
+        {
+          $sort: { totalWarnings: -1 },
+        },
+      ])
+      .toArray()
+
+    // Add conversation counts
+    for (let website of websiteAnalysis) {
+      const conversationCount = await conversationsCollection.countDocuments({
+        website: website._id,
+      })
+      website.conversationCount = conversationCount
+    }
+
+    res.json({ success: true, websiteAnalysis })
+  } catch (error) {
+    console.error('Error analyzing websites:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Export data
+app.get('/api/export', async (req, res) => {
+  try {
+    const { mongodb_url, type = 'all' } = req.query
+
+    if (!db) {
+      const connected = await connectToMongoDB(mongodb_url)
+      if (!connected) {
+        return res.status(500).json({ error: 'Failed to connect to MongoDB' })
+      }
+    }
+
+    let data = {}
+
+    if (type === 'all' || type === 'conversations') {
+      const conversationsCollection = db.collection('conversations')
+      data.conversations = await conversationsCollection.find({}).toArray()
+    }
+
+    if (type === 'all' || type === 'warnings') {
+      const warningsCollection = db.collection('warnings')
+      data.warnings = await warningsCollection.find({}).toArray()
+    }
+
+    res.setHeader('Content-Type', 'application/json')
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ai-bot-data-${Date.now()}.json"`
+    )
+    res.json(data)
+  } catch (error) {
+    console.error('Error exporting data:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    database: db ? 'Connected' : 'Disconnected',
-  })
+  res.json({ status: 'OK', timestamp: new Date().toISOString() })
 })
 
 // Start server
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`)
-  await connectToMongoDB()
-})
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Shutting down gracefully...')
-  process.exit(0)
+app.listen(PORT, () => {
+  console.log(`AI Bot Privacy Guard API server running on port ${PORT}`)
+  console.log(`Health check: http://localhost:${PORT}/health`)
+  console.log('Ready to receive bot detection data...')
 })

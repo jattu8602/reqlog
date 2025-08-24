@@ -2,6 +2,8 @@
 const GEMINI_API_KEY = 'AIzaSyC0P9KY3lAjFTy73kHTFJ34VC8HoSJgy-Y'
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+const MONGODB_URL =
+  'mongodb+srv://reqlog:reqlog@reqlog.fvlzk2o.mongodb.net/reqlog?retryWrites=true&w=majority&appName=reqlog'
 
 // State management
 let detectedBots = new Map()
@@ -26,21 +28,27 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background received message:', request.action, request.data)
+
   switch (request.action) {
     case 'botDetected':
       handleBotDetection(request.data, sender.tab?.id)
+      sendResponse({ success: true })
       break
 
     case 'conversationMessage':
       handleConversationMessage(request.data, sender.tab?.id)
+      sendResponse({ success: true })
       break
 
     case 'privacyWarning':
       handlePrivacyWarning(request.data, sender.tab?.id)
+      sendResponse({ success: true })
       break
 
     case 'statusUpdate':
       handleStatusUpdate(request.data, sender.tab?.id)
+      sendResponse({ success: true })
       break
 
     case 'toggleMonitoring':
@@ -67,6 +75,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       clearAllData()
       sendResponse({ success: true })
       break
+
+    case 'getDashboardData':
+      getDashboardData().then((data) => {
+        sendResponse(data)
+      })
+      return true // Keep message channel open for async response
   }
 })
 
@@ -104,7 +118,7 @@ function handleBotDetection(botData, tabId) {
       priority: 1,
     })
   } catch (e) {
-    console.log('Could not create notification:', e)
+    console.log('Notification failed:', e)
   }
 }
 
@@ -128,11 +142,16 @@ function handleConversationMessage(messageData, tabId) {
   })
 
   // Update statistics
-  botDetectionStats.totalConversations = conversationHistory.size
+  botDetectionStats.totalConversations = Array.from(
+    conversationHistory.values()
+  ).reduce((sum, conv) => sum + conv.length, 0)
   botDetectionStats.lastUpdated = new Date().toISOString()
 
   // Store in local storage
   chrome.storage.local.set({ botDetectionStats })
+
+  // Store in MongoDB
+  storeMessageInMongoDB(messageData, tabId)
 
   // Analyze message for enhanced privacy risk detection using Gemini AI
   if (messageData.sender === 'bot') {
@@ -158,6 +177,9 @@ function handlePrivacyWarning(warningData, tabId) {
   // Store in local storage
   chrome.storage.local.set({ botDetectionStats })
 
+  // Store warning in MongoDB
+  storeWarningInMongoDB(warningData, tabId)
+
   // Send notification to user
   try {
     chrome.notifications.create({
@@ -170,7 +192,7 @@ function handlePrivacyWarning(warningData, tabId) {
       priority: 2,
     })
   } catch (e) {
-    console.log('Could not create notification:', e)
+    console.log('Notification failed:', e)
   }
 
   // Log warning
@@ -190,6 +212,127 @@ function handleStatusUpdate(statusData, tabId) {
         bot.conversationCount = statusData.conversationsMonitored
         bot.warningCount = statusData.privacyWarnings
       }
+    }
+  }
+}
+
+// Store message in MongoDB
+async function storeMessageInMongoDB(messageData, tabId) {
+  try {
+    const messageDoc = {
+      botId: messageData.botId,
+      sender: messageData.sender,
+      content: messageData.content,
+      timestamp: new Date().toISOString(),
+      url: messageData.url,
+      tabId: tabId,
+      website: new URL(messageData.url).hostname,
+      createdAt: new Date(),
+    }
+
+    const response = await fetch('http://localhost:3000/api/conversations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...messageDoc,
+        mongodb_url: MONGODB_URL,
+      }),
+    })
+
+    if (!response.ok) {
+      console.error('Failed to store message in MongoDB:', response.status)
+    } else {
+      console.log('Message stored in MongoDB successfully')
+    }
+  } catch (error) {
+    console.log('Error storing message in MongoDB:', error)
+  }
+}
+
+// Store warning in MongoDB
+async function storeWarningInMongoDB(warningData, tabId) {
+  try {
+    const warningDoc = {
+      botId: warningData.botId,
+      sender: warningData.sender,
+      content: warningData.content,
+      risks: warningData.risks,
+      severity: warningData.severity,
+      timestamp: new Date().toISOString(),
+      url: warningData.url,
+      tabId: tabId,
+      website: new URL(warningData.url).hostname,
+      createdAt: new Date(),
+    }
+
+    const response = await fetch('http://localhost:3000/api/warnings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...warningDoc,
+        mongodb_url: MONGODB_URL,
+      }),
+    })
+
+    if (!response.ok) {
+      console.error('Failed to store warning in MongoDB:', response.status)
+    } else {
+      console.log('Warning stored in MongoDB successfully')
+    }
+  } catch (error) {
+    console.log('Error storing warning in MongoDB:', error)
+  }
+}
+
+// Get dashboard data
+async function getDashboardData() {
+  try {
+    const response = await fetch('http://localhost:3000/api/dashboard', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mongodb_url: MONGODB_URL,
+      }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      return {
+        success: true,
+        data: data,
+        localStats: {
+          bots: Array.from(detectedBots.values()),
+          conversations: Array.from(conversationHistory.values()),
+          warnings: privacyWarnings,
+        },
+      }
+    } else {
+      return {
+        success: false,
+        error: 'Failed to fetch dashboard data',
+        localStats: {
+          bots: Array.from(detectedBots.values()),
+          conversations: Array.from(conversationHistory.values()),
+          warnings: privacyWarnings,
+        },
+      }
+    }
+  } catch (error) {
+    console.log('Error fetching dashboard data:', error)
+    return {
+      success: false,
+      error: error.message,
+      localStats: {
+        bots: Array.from(detectedBots.values()),
+        conversations: Array.from(conversationHistory.values()),
+        warnings: privacyWarnings,
+      },
     }
   }
 }
@@ -268,6 +411,9 @@ async function analyzeMessageWithAI(messageData, botId) {
           // Store updated stats
           chrome.storage.local.set({ botDetectionStats })
 
+          // Store enhanced warning in MongoDB
+          storeWarningInMongoDB(enhancedWarning, messageData.tabId)
+
           // Send enhanced notification
           try {
             chrome.notifications.create({
@@ -278,7 +424,7 @@ async function analyzeMessageWithAI(messageData, botId) {
               priority: 2,
             })
           } catch (e) {
-            console.log('Could not create enhanced notification:', e)
+            console.log('Enhanced notification failed:', e)
           }
         }
       } catch (parseError) {
@@ -336,7 +482,9 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
   // Update statistics
   botDetectionStats.totalBots = detectedBots.size
-  botDetectionStats.totalConversations = conversationHistory.size
+  botDetectionStats.totalConversations = Array.from(
+    conversationHistory.values()
+  ).reduce((sum, conv) => sum + conv.length, 0)
   botDetectionStats.lastUpdated = new Date().toISOString()
 
   chrome.storage.local.set({ botDetectionStats })

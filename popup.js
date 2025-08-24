@@ -6,8 +6,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const conversations = document.getElementById('conversations')
   const privacyWarnings = document.getElementById('privacyWarnings')
   const lastUpdated = document.getElementById('lastUpdated')
+  const viewDashboardBtn = document.getElementById('viewDashboard')
   const viewDetailsBtn = document.getElementById('viewDetails')
   const clearDataBtn = document.getElementById('clearData')
+  const dashboard = document.getElementById('dashboard')
 
   // Load initial state
   loadStatus()
@@ -17,6 +19,10 @@ document.addEventListener('DOMContentLoaded', function () {
   monitoringToggle.addEventListener('change', function () {
     const isEnabled = this.checked
     toggleMonitoring(isEnabled)
+  })
+
+  viewDashboardBtn.addEventListener('click', function () {
+    toggleDashboard()
   })
 
   viewDetailsBtn.addEventListener('click', function () {
@@ -107,6 +113,109 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateStatusText(isEnabled) {
     statusText.textContent = isEnabled ? 'Active' : 'Inactive'
     statusText.style.color = isEnabled ? '#4CAF50' : '#f44336'
+  }
+
+  // Toggle dashboard view
+  function toggleDashboard() {
+    if (dashboard.style.display === 'none' || !dashboard.style.display) {
+      dashboard.style.display = 'block'
+      viewDashboardBtn.textContent = 'Hide Dashboard'
+      loadDashboardData()
+    } else {
+      dashboard.style.display = 'none'
+      viewDashboardBtn.textContent = 'Dashboard'
+    }
+  }
+
+  // Load dashboard data
+  function loadDashboardData() {
+    const recentWarnings = document.getElementById('recentWarnings')
+    const recentConversations = document.getElementById('recentConversations')
+
+    // Show loading state
+    recentWarnings.innerHTML = '<div class="loading">Loading warnings...</div>'
+    recentConversations.innerHTML =
+      '<div class="loading">Loading conversations...</div>'
+
+    chrome.runtime.sendMessage(
+      { action: 'getDashboardData' },
+      function (response) {
+        if (response && response.success) {
+          displayDashboardData(response.data, response.localStats)
+        } else {
+          // Use local data if MongoDB is not available
+          displayDashboardData(null, response.localStats)
+        }
+      }
+    )
+  }
+
+  // Display dashboard data
+  function displayDashboardData(mongoData, localStats) {
+    const recentWarnings = document.getElementById('recentWarnings')
+    const recentConversations = document.getElementById('recentConversations')
+
+    // Display warnings
+    if (localStats.warnings && localStats.warnings.length > 0) {
+      const warningsHtml = localStats.warnings
+        .slice(0, 5)
+        .map(
+          (warning, index) => `
+        <div class="warning-item">
+          <div class="risk-type">⚠️ ${
+            warning.risks?.map((r) => r.type.replace('_', ' ')).join(', ') ||
+            'Unknown Risk'
+          }</div>
+          <div class="content">${warning.content?.substring(0, 100)}${
+            warning.content?.length > 100 ? '...' : ''
+          }</div>
+          <div class="meta">${new Date(warning.timestamp).toLocaleString()} • ${
+            new URL(warning.url).hostname
+          }</div>
+        </div>
+      `
+        )
+        .join('')
+      recentWarnings.innerHTML = warningsHtml
+    } else {
+      recentWarnings.innerHTML =
+        '<div class="conversation-item">No privacy warnings detected yet.</div>'
+    }
+
+    // Display conversations
+    if (localStats.conversations && localStats.conversations.length > 0) {
+      const allMessages = []
+      localStats.conversations.forEach((conv) => {
+        conv.forEach((msg) => allMessages.push(msg))
+      })
+
+      // Sort by timestamp and take recent ones
+      const recentMessages = allMessages
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 5)
+
+      const conversationsHtml = recentMessages
+        .map(
+          (message, index) => `
+        <div class="conversation-item">
+          <div class="sender">${
+            message.sender === 'bot' ? '🤖 Bot' : '👤 You'
+          }</div>
+          <div class="content">${message.content?.substring(0, 80)}${
+            message.content?.length > 80 ? '...' : ''
+          }</div>
+          <div class="meta">${new Date(message.timestamp).toLocaleString()} • ${
+            new URL(message.url).hostname
+          }</div>
+        </div>
+      `
+        )
+        .join('')
+      recentConversations.innerHTML = conversationsHtml
+    } else {
+      recentConversations.innerHTML =
+        '<div class="conversation-item">No conversations monitored yet.</div>'
+    }
   }
 
   // View detailed bot information
@@ -243,6 +352,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Reset warning colors
         privacyWarnings.className = 'stat-value'
+
+        // Clear dashboard
+        if (dashboard.style.display !== 'none') {
+          toggleDashboard()
+        }
 
         // Show confirmation
         showNotification('Data cleared successfully!', 'success')

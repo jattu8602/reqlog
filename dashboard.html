@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Bot Privacy Guard - Dashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-card .icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+      }
+
+      .stat-card .number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 10px;
+      }
+
+      .stat-card .label {
+        font-size: 1.1rem;
+        color: #666;
+      }
+
+      .dashboard-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+
+      .dashboard-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .dashboard-section h2 {
+        color: #667eea;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .conversation-item,
+      .warning-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+      }
+
+      .warning-item {
+        border-left-color: #f44336;
+        background: #fff5f5;
+      }
+
+      .conversation-item .sender {
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 8px;
+      }
+
+      .warning-item .risk-type {
+        font-weight: bold;
+        color: #f44336;
+        margin-bottom: 8px;
+      }
+
+      .conversation-item .content,
+      .warning-item .content {
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+
+      .conversation-item .meta,
+      .warning-item .meta {
+        font-size: 0.9rem;
+        color: #666;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .website-badge {
+        background: #667eea;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+      }
+
+      .security-tips {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+      }
+
+      .security-tips h2 {
+        color: #4caf50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .tip-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 4px solid #4caf50;
+      }
+
+      .tip-card h3 {
+        color: #4caf50;
+        margin-bottom: 10px;
+      }
+
+      .tip-card p {
+        color: #666;
+        line-height: 1.5;
+      }
+
+      .website-analysis {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+      }
+
+      .website-analysis h2 {
+        color: #ff9800;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .website-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .website-info h3 {
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .website-stats {
+        display: flex;
+        gap: 15px;
+      }
+
+      .stat-badge {
+        background: #667eea;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 0.9rem;
+      }
+
+      .stat-badge.high-risk {
+        background: #f44336;
+      }
+
+      .stat-badge.medium-risk {
+        background: #ff9800;
+      }
+
+      .stat-badge.low-risk {
+        background: #4caf50;
+      }
+
+      .controls {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin: 0 10px;
+        transition: all 0.3s ease;
+      }
+
+      .btn:hover {
+        background: #5a6fd8;
+        transform: translateY(-2px);
+      }
+
+      .btn.danger {
+        background: #f44336;
+      }
+
+      .btn.danger:hover {
+        background: #d32f2f;
+      }
+
+      .btn.success {
+        background: #4caf50;
+      }
+
+      .btn.success:hover {
+        background: #45a049;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .error {
+        background: #ffebee;
+        border: 1px solid #f44336;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+        color: #f44336;
+      }
+
+      .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+      }
+
+      @media (max-width: 768px) {
+        .dashboard-sections {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .tips-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🤖 AI Bot Privacy Guard</h1>
+        <p>Comprehensive Dashboard for Privacy Protection</p>
+      </div>
+
+      <div class="controls">
+        <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+        <button class="btn success" onclick="exportData()">
+          📊 Export Data
+        </button>
+        <button class="btn danger" onclick="clearData()">🗑️ Clear Data</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="icon">🤖</div>
+          <div class="number" id="totalBots">-</div>
+          <div class="label">Bots Detected</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon">💬</div>
+          <div class="number" id="totalConversations">-</div>
+          <div class="label">Conversations</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon">⚠️</div>
+          <div class="number" id="totalWarnings">-</div>
+          <div class="label">Privacy Warnings</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon">🌐</div>
+          <div class="number" id="uniqueWebsites">-</div>
+          <div class="label">Websites Monitored</div>
+        </div>
+      </div>
+
+      <div class="dashboard-sections">
+        <div class="dashboard-section">
+          <h2>🔴 Recent Privacy Warnings</h2>
+          <div id="recentWarnings">
+            <div class="loading">Loading warnings...</div>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h2>💬 Recent Conversations</h2>
+          <div id="recentConversations">
+            <div class="loading">Loading conversations...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="website-analysis">
+        <h2>🌐 Website Risk Analysis</h2>
+        <div id="websiteAnalysis">
+          <div class="loading">Loading website analysis...</div>
+        </div>
+      </div>
+
+      <div class="security-tips">
+        <h2>🛡️ Security & Privacy Tips</h2>
+        <div class="tips-grid">
+          <div class="tip-card">
+            <h3>🔒 Never Share Sensitive Data</h3>
+            <p>
+              Avoid sharing Social Security Numbers, credit card details, bank
+              account information, or passwords with AI bots, even if they seem
+              legitimate.
+            </p>
+          </div>
+          <div class="tip-card">
+            <h3>🔍 Verify Website Legitimacy</h3>
+            <p>
+              Always check the website's URL, look for security certificates
+              (HTTPS), and research the company before sharing personal
+              information.
+            </p>
+          </div>
+          <div class="tip-card">
+            <h3>📱 Use Strong Authentication</h3>
+            <p>
+              Enable two-factor authentication on all your accounts and use
+              unique, strong passwords for different services.
+            </p>
+          </div>
+          <div class="tip-card">
+            <h3>🚫 Be Wary of Social Engineering</h3>
+            <p>
+              AI bots can be sophisticated. Don't trust requests for personal
+              information, even if they seem urgent or official.
+            </p>
+          </div>
+          <div class="tip-card">
+            <h3>📊 Monitor Your Data</h3>
+            <p>
+              Regularly check your bank statements, credit reports, and online
+              accounts for any suspicious activity.
+            </p>
+          </div>
+          <div class="tip-card">
+            <h3>🆘 Report Suspicious Activity</h3>
+            <p>
+              If you suspect your data has been compromised, immediately contact
+              relevant authorities and financial institutions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const MONGODB_URL =
+        'mongodb+srv://reqlog:reqlog@reqlog.fvlzk2o.mongodb.net/reqlog?retryWrites=true&w=majority&appName=reqlog'
+      const API_BASE = 'http://localhost:3000'
+
+      // Load dashboard data
+      async function loadDashboardData() {
+        try {
+          const response = await fetch(`${API_BASE}/api/dashboard`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              mongodb_url: MONGODB_URL,
+            }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            displayDashboardData(data.data)
+          } else {
+            throw new Error('Failed to fetch dashboard data')
+          }
+        } catch (error) {
+          console.error('Error loading dashboard data:', error)
+          showError(
+            'Failed to load dashboard data. Make sure the API server is running.'
+          )
+        }
+      }
+
+      // Display dashboard data
+      function displayDashboardData(data) {
+        // Update statistics
+        document.getElementById('totalBots').textContent =
+          data.statistics?.totalBots || 0
+        document.getElementById('totalConversations').textContent =
+          data.statistics?.totalConversations || 0
+        document.getElementById('totalWarnings').textContent =
+          data.statistics?.totalWarnings || 0
+        document.getElementById('uniqueWebsites').textContent =
+          data.statistics?.uniqueWebsites || 0
+
+        // Display recent warnings
+        displayWarnings(data.recentWarnings)
+
+        // Display recent conversations
+        displayConversations(data.recentConversations)
+
+        // Display website analysis
+        displayWebsiteAnalysis(data.websiteAnalysis)
+      }
+
+      // Display warnings
+      function displayWarnings(warnings) {
+        const container = document.getElementById('recentWarnings')
+
+        if (!warnings || warnings.length === 0) {
+          container.innerHTML =
+            '<div class="no-data">No privacy warnings detected yet.</div>'
+          return
+        }
+
+        const warningsHtml = warnings
+          .map(
+            (warning) => `
+                <div class="warning-item">
+                    <div class="risk-type">⚠️ ${
+                      warning.risks
+                        ?.map((r) => r.type.replace('_', ' '))
+                        .join(', ') || 'Unknown Risk'
+                    }</div>
+                    <div class="content">${warning.content?.substring(0, 150)}${
+              warning.content?.length > 150 ? '...' : ''
+            }</div>
+                    <div class="meta">
+                        <span>${new Date(
+                          warning.timestamp
+                        ).toLocaleString()}</span>
+                        <span class="website-badge">${warning.website}</span>
+                    </div>
+                </div>
+            `
+          )
+          .join('')
+
+        container.innerHTML = warningsHtml
+      }
+
+      // Display conversations
+      function displayConversations(conversations) {
+        const container = document.getElementById('recentConversations')
+
+        if (!conversations || conversations.length === 0) {
+          container.innerHTML =
+            '<div class="no-data">No conversations monitored yet.</div>'
+          return
+        }
+
+        const conversationsHtml = conversations
+          .map(
+            (conversation) => `
+                <div class="conversation-item">
+                    <div class="sender">${
+                      conversation.sender === 'bot' ? '🤖 AI Bot' : '👤 User'
+                    }</div>
+                    <div class="content">${conversation.content?.substring(
+                      0,
+                      120
+                    )}${conversation.content?.length > 120 ? '...' : ''}</div>
+                    <div class="meta">
+                        <span>${new Date(
+                          conversation.timestamp
+                        ).toLocaleString()}</span>
+                        <span class="website-badge">${
+                          conversation.website
+                        }</span>
+                    </div>
+                </div>
+            `
+          )
+          .join('')
+
+        container.innerHTML = conversationsHtml
+      }
+
+      // Display website analysis
+      function displayWebsiteAnalysis(websites) {
+        const container = document.getElementById('websiteAnalysis')
+
+        if (!websites || websites.length === 0) {
+          container.innerHTML =
+            '<div class="no-data">No website analysis available yet.</div>'
+          return
+        }
+
+        const websitesHtml = websites
+          .map(
+            (website) => `
+                <div class="website-item">
+                    <div class="website-info">
+                        <h3>${website._id}</h3>
+                        <div class="website-stats">
+                            <span class="stat-badge">${
+                              website.warningCount
+                            } warnings</span>
+                            <span class="stat-badge high-risk">${
+                              website.highRiskCount
+                            } high risk</span>
+                            <span class="stat-badge">${
+                              website.conversationCount || 0
+                            } conversations</span>
+                        </div>
+                    </div>
+                    <div class="website-meta">
+                        <small>Last warning: ${new Date(
+                          website.lastWarning
+                        ).toLocaleDateString()}</small>
+                    </div>
+                </div>
+            `
+          )
+          .join('')
+
+        container.innerHTML = websitesHtml
+      }
+
+      // Refresh data
+      function refreshData() {
+        loadDashboardData()
+      }
+
+      // Export data
+      async function exportData() {
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/export?mongodb_url=${encodeURIComponent(
+              MONGODB_URL
+            )}`
+          )
+          if (response.ok) {
+            const data = await response.json()
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+              type: 'application/json',
+            })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `ai-bot-data-${Date.now()}.json`
+            a.click()
+            URL.revokeObjectURL(url)
+          }
+        } catch (error) {
+          console.error('Error exporting data:', error)
+          showError('Failed to export data')
+        }
+      }
+
+      // Clear data
+      async function clearData() {
+        if (
+          confirm(
+            'Are you sure you want to clear all data? This cannot be undone.'
+          )
+        ) {
+          try {
+            // Clear local storage
+            localStorage.clear()
+
+            // Clear display
+            document.getElementById('totalBots').textContent = '0'
+            document.getElementById('totalConversations').textContent = '0'
+            document.getElementById('totalWarnings').textContent = '0'
+            document.getElementById('uniqueWebsites').textContent = '0'
+
+            document.getElementById('recentWarnings').innerHTML =
+              '<div class="no-data">No privacy warnings detected yet.</div>'
+            document.getElementById('recentConversations').innerHTML =
+              '<div class="no-data">No conversations monitored yet.</div>'
+            document.getElementById('websiteAnalysis').innerHTML =
+              '<div class="no-data">No website analysis available yet.</div>'
+
+            showSuccess('Data cleared successfully')
+          } catch (error) {
+            console.error('Error clearing data:', error)
+            showError('Failed to clear data')
+          }
+        }
+      }
+
+      // Show error message
+      function showError(message) {
+        const errorDiv = document.createElement('div')
+        errorDiv.className = 'error'
+        errorDiv.textContent = message
+        document
+          .querySelector('.container')
+          .insertBefore(errorDiv, document.querySelector('.stats-grid'))
+
+        setTimeout(() => {
+          errorDiv.remove()
+        }, 5000)
+      }
+
+      // Show success message
+      function showSuccess(message) {
+        const successDiv = document.createElement('div')
+        successDiv.className = 'error'
+        successDiv.style.background = '#e8f5e8'
+        successDiv.style.borderColor = '#4caf50'
+        successDiv.style.color = '#4caf50'
+        successDiv.textContent = message
+        document
+          .querySelector('.container')
+          .insertBefore(successDiv, document.querySelector('.stats-grid'))
+
+        setTimeout(() => {
+          successDiv.remove()
+        }, 3000)
+      }
+
+      // Load data when page loads
+      document.addEventListener('DOMContentLoaded', loadDashboardData)
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadDashboardData, 30000)
+    </script>
+  </body>
+</html>

@@ -95,13 +95,17 @@ function handleBotDetection(botData, tabId) {
   console.log('AI Bot detected:', botData)
 
   // Send notification to user
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: 'icons/ext.png',
-    title: 'AI Bot Detected',
-    message: `Found ${botData.type} bot on ${new URL(botData.url).hostname}`,
-    priority: 1,
-  })
+  try {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/ext.png',
+      title: 'AI Bot Detected',
+      message: `Found ${botData.type} bot on ${new URL(botData.url).hostname}`,
+      priority: 1,
+    })
+  } catch (e) {
+    console.log('Could not create notification:', e)
+  }
 }
 
 // Handle conversation messages
@@ -155,15 +159,19 @@ function handlePrivacyWarning(warningData, tabId) {
   chrome.storage.local.set({ botDetectionStats })
 
   // Send notification to user
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: 'icons/ext.png',
-    title: 'Privacy Risk Detected',
-    message: `High risk: Bot requesting ${warningData.risks
-      .map((r) => r.type.replace('_', ' '))
-      .join(', ')}`,
-    priority: 2,
-  })
+  try {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/ext.png',
+      title: 'Privacy Risk Detected',
+      message: `High risk: Bot requesting ${warningData.risks
+        .map((r) => r.type.replace('_', ' '))
+        .join(', ')}`,
+      priority: 2,
+    })
+  } catch (e) {
+    console.log('Could not create notification:', e)
+  }
 
   // Log warning
   console.log('Privacy warning:', warningData)
@@ -261,13 +269,17 @@ async function analyzeMessageWithAI(messageData, botId) {
           chrome.storage.local.set({ botDetectionStats })
 
           // Send enhanced notification
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'icons/ext.png',
-            title: 'AI-Enhanced Privacy Warning',
-            message: `AI detected: ${analysis.explanation}`,
-            priority: 2,
-          })
+          try {
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/ext.png',
+              title: 'AI-Enhanced Privacy Warning',
+              message: `AI detected: ${analysis.explanation}`,
+              priority: 2,
+            })
+          } catch (e) {
+            console.log('Could not create enhanced notification:', e)
+          }
         }
       } catch (parseError) {
         console.log('AI response parsing failed:', parseError)

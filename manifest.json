@@ -3,7 +3,7 @@
   "name": "AI Bot Privacy Guard",
   "version": "1.0.0",
   "description": "Detects AI bots on websites and warns users about potential privacy risks",
-  "permissions": ["storage", "activeTab", "tabs", "scripting"],
+  "permissions": ["storage", "activeTab", "tabs", "scripting", "notifications"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
